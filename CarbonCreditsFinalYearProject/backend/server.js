@@ -258,6 +258,34 @@ app.get('/api/alerts', authenticateToken, async (req, res) => {
 // ==========================================
 
 const PORT = process.env.PORT || 3000;
+// ==========================================
+// GET RECENT EMISSIONS (for dashboard)
+// ==========================================
+
+
+// PUBLIC endpoint - Get all emissions (no authentication required)
+app.get('/api/emissions/all', async (req, res) => {
+    try {
+        const [emissions] = await pool.query(
+            `SELECT 
+                ed.emission_id,
+                ed.timestamp,
+                ed.co2_value,
+                ed.temperature,
+                ed.humidity,
+                ed.sensor_id
+            FROM Emission_Data ed
+            ORDER BY ed.timestamp DESC
+            LIMIT 50`
+        );
+
+        console.log(`📊 Fetched ${emissions.length} emission records`);
+        res.json(emissions);
+    } catch (error) {
+        console.error('❌ Fetch all emissions error:', error);
+        res.status(500).json({ error: 'Failed to fetch emissions' });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`
