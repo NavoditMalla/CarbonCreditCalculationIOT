@@ -3,19 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carbon Emission Monitor</title>
+    <title>Carbon Emission Monitor - Real Data</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-    </style>
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
@@ -29,27 +19,26 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">Carbon Emission Monitor</h1>
-                    <p class="text-sm text-gray-500">Real-time Industrial Emission Tracking</p>
+                    <p class="text-sm text-gray-500">Real-time Arduino Data Dashboard</p>
                 </div>
             </div>
             <div class="flex items-center gap-4">
-                <button class="relative p-2 hover:bg-gray-100 rounded-lg">
-                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                    </svg>
-                    <span id="alertBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">28</span>
-                </button>
-                <button class="p-2 hover:bg-gray-100 rounded-lg">
-                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
+                <button onclick="refreshData()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    🔄 Refresh Now
                 </button>
             </div>
         </div>
     </div>
 
     <div class="max-w-7xl mx-auto px-6 py-6">
+        <!-- Connection Status -->
+        <div id="connectionStatus" class="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200">
+            <div class="flex items-center gap-3">
+                <div class="animate-pulse w-3 h-3 bg-blue-500 rounded-full"></div>
+                <p class="text-blue-900 font-semibold">Connecting to server...</p>
+            </div>
+        </div>
+
         <!-- Alert Banner -->
         <div id="alertBanner" class="mb-6 p-4 rounded-lg hidden">
             <div class="flex items-center gap-3">
@@ -67,50 +56,38 @@
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             <div class="bg-white p-6 rounded-lg shadow-sm border">
                 <p class="text-sm text-gray-500 mb-1">Current Emission</p>
-                <p id="currentEmission" class="text-3xl font-bold text-gray-900">850</p>
+                <p id="currentEmission" class="text-3xl font-bold text-gray-900">--</p>
                 <p class="text-xs text-gray-500 mt-1">kg CO₂/hour</p>
-                <div id="emissionTrend" class="mt-2 flex items-center gap-1">
-                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                    </svg>
-                    <span class="text-xs text-green-600">-2.1%</span>
+                <div id="emissionTrend" class="mt-2">
+                    <span class="text-xs text-gray-400">Waiting for data...</span>
                 </div>
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-sm border">
-                <p class="text-sm text-gray-500 mb-1">Total Credits</p>
-                <p class="text-3xl font-bold text-green-600">12,042</p>
-                <p class="text-xs text-gray-500 mt-1">Carbon Credits</p>
-                <div class="mt-2">
-                    <span class="text-xs text-green-600">Available for trading</span>
-                </div>
+                <p class="text-sm text-gray-500 mb-1">Temperature</p>
+                <p id="currentTemp" class="text-3xl font-bold text-blue-600">--</p>
+                <p class="text-xs text-gray-500 mt-1">°C</p>
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-sm border">
-                <p class="text-sm text-gray-500 mb-1">Active Sensors</p>
-                <p class="text-3xl font-bold text-blue-600">4</p>
-                <p class="text-xs text-gray-500 mt-1">IoT Devices Online</p>
-                <div class="mt-2">
-                    <span class="text-xs text-green-600">● All operational</span>
-                </div>
+                <p class="text-sm text-gray-500 mb-1">Humidity</p>
+                <p id="currentHumidity" class="text-3xl font-bold text-blue-600">--</p>
+                <p class="text-xs text-gray-500 mt-1">%</p>
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-sm border">
-                <p class="text-sm text-gray-500 mb-1">System Health</p>
-                <p class="text-3xl font-bold text-green-600">98%</p>
-                <p class="text-xs text-gray-500 mt-1">Uptime Status</p>
-                <div class="mt-2">
-                    <span class="text-xs text-green-600">Excellent</span>
-                </div>
+                <p class="text-sm text-gray-500 mb-1">Total Records</p>
+                <p id="totalRecords" class="text-3xl font-bold text-green-600">0</p>
+                <p class="text-xs text-gray-500 mt-1">Data Points</p>
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-sm border">
                 <p class="text-sm text-gray-500 mb-1">Compliance</p>
-                <p id="compliancePercent" class="text-3xl font-bold text-gray-900">85.0%</p>
+                <p id="compliancePercent" class="text-3xl font-bold text-gray-900">--</p>
                 <p class="text-xs text-gray-500 mt-1">of Daily Limit</p>
                 <div class="mt-2">
                     <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div id="complianceBar" class="h-2 rounded-full bg-green-500" style="width: 85%"></div>
+                        <div id="complianceBar" class="h-2 rounded-full bg-green-500" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
@@ -120,205 +97,237 @@
         <div class="bg-white p-6 rounded-lg shadow-sm border mb-6">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-gray-900">Real-Time Emission Monitoring</h2>
-                <span class="text-sm text-gray-500">Live data • Updates every 5 seconds</span>
+                <span class="text-sm text-gray-500">Live Arduino Data • Last update: <span id="lastUpdate">--</span></span>
             </div>
             <canvas id="emissionChart" height="100"></canvas>
         </div>
 
-        <!-- Monthly Carbon Credit Trends -->
-        <div class="bg-white p-6 rounded-lg shadow-sm border mb-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Monthly Carbon Credit Analysis</h2>
-            <canvas id="creditChart" height="100"></canvas>
-        </div>
-
-        <!-- Daily Emission Records -->
+        <!-- Recent Emission Records -->
         <div class="bg-white p-6 rounded-lg shadow-sm border mb-6">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-gray-900">Daily Emission Records</h2>
-                <button onclick="generateReport()" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                    </svg>
-                    Generate Report
+                <h2 class="text-lg font-semibold text-gray-900">Recent Emission Records</h2>
+                <button onclick="exportData()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    📊 Export CSV
                 </button>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
                         <tr class="border-b">
-                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
-                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">CO₂ Emissions</th>
-                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Government Limit</th>
-                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Carbon Credits</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Timestamp</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Sensor</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">CO₂ (kg/h)</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Temp (°C)</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Humidity (%)</th>
                             <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
                         </tr>
                     </thead>
                     <tbody id="recordsTable">
-                        <!-- Records will be populated by JavaScript -->
+                        <tr>
+                            <td colspan="6" class="text-center py-8 text-gray-500">Loading data...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Carbon Credit Summary -->
+        <!-- Statistics -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-green-50 border border-green-200 p-6 rounded-lg">
-                <h3 class="text-sm font-semibold text-green-900 mb-2">Credits Earned (This Month)</h3>
-                <p class="text-3xl font-bold text-green-700">156</p>
-                <p class="text-xs text-green-600 mt-1">Worth approx. $7,800</p>
-            </div>
-            
-            <div class="bg-red-50 border border-red-200 p-6 rounded-lg">
-                <h3 class="text-sm font-semibold text-red-900 mb-2">Credits Required (This Month)</h3>
-                <p class="text-3xl font-bold text-red-700">42</p>
-                <p class="text-xs text-red-600 mt-1">Purchase needed: $2,100</p>
+                <h3 class="text-sm font-semibold text-green-900 mb-2">Average Emission</h3>
+                <p id="avgEmission" class="text-3xl font-bold text-green-700">--</p>
+                <p class="text-xs text-green-600 mt-1">kg CO₂/hour (Last hour)</p>
             </div>
             
             <div class="bg-blue-50 border border-blue-200 p-6 rounded-lg">
-                <h3 class="text-sm font-semibold text-blue-900 mb-2">Net Balance</h3>
-                <p class="text-3xl font-bold text-blue-700">+114</p>
-                <p class="text-xs text-blue-600 mt-1">Available for trading</p>
+                <h3 class="text-sm font-semibold text-blue-900 mb-2">Peak Emission</h3>
+                <p id="peakEmission" class="text-3xl font-bold text-blue-700">--</p>
+                <p class="text-xs text-blue-600 mt-1">Maximum recorded</p>
+            </div>
+            
+            <div class="bg-purple-50 border border-purple-200 p-6 rounded-lg">
+                <h3 class="text-sm font-semibold text-purple-900 mb-2">Data Collection</h3>
+                <p id="dataStatus" class="text-3xl font-bold text-purple-700">Active</p>
+                <p class="text-xs text-purple-600 mt-1">Arduino connected</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Data
-        let currentEmission = 850;
-        const emissionLimit = 1000;
+        // Configuration
+        const API_URL = 'http://localhost:3000/api';
+        const EMISSION_LIMIT = 1000; // kg CO₂/hour
+        const REFRESH_INTERVAL = 5000; // 5 seconds
         
-        const dailyRecords = [
-            { date: '2024-06-01', co2: 1000, credits: 1, status: 'earned' },
-            { date: '2024-06-02', co2: 2000, credits: 2, status: 'deficit' },
-            { date: '2024-06-03', co2: 900, credits: 0.5, status: 'earned' },
-            { date: '2024-06-04', co2: 700, credits: 0.7, status: 'earned' },
-            { date: '2024-06-05', co2: 300, credits: 3, status: 'earned' },
-            { date: '2024-06-06', co2: 3000, credits: 3, status: 'deficit' }
-        ];
+        let emissionChart = null;
+        let allEmissionsData = [];
 
-        // Initialize Charts
-        const emissionCtx = document.getElementById('emissionChart').getContext('2d');
-        const emissionChart = new Chart(emissionCtx, {
-            type: 'line',
-            data: {
-                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
-                datasets: [{
-                    label: 'Current Emission',
-                    data: [720, 680, 820, 950, 890, 850],
-                    borderColor: 'rgb(37, 99, 235)',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    tension: 0.4,
-                    borderWidth: 2
-                }, {
-                    label: 'Government Limit',
-                    data: [1000, 1000, 1000, 1000, 1000, 1000],
-                    borderColor: 'rgb(220, 38, 38)',
-                    borderDash: [5, 5],
-                    borderWidth: 2,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom'
-                    }
+        // Initialize Chart
+        function initializeChart() {
+            const ctx = document.getElementById('emissionChart').getContext('2d');
+            emissionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'CO₂ Emission (kg/hour)',
+                        data: [],
+                        borderColor: 'rgb(37, 99, 235)',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        fill: true
+                    }, {
+                        label: 'Limit',
+                        data: [],
+                        borderColor: 'rgb(220, 38, 38)',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'CO₂ (kg/hour)'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: true, position: 'bottom' },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'CO₂ (kg/hour)' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Time' }
                         }
                     }
                 }
-            }
-        });
-
-        const creditCtx = document.getElementById('creditChart').getContext('2d');
-        const creditChart = new Chart(creditCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [{
-                    label: 'Credits Earned',
-                    data: [45, 52, 38, 61, 48, 55],
-                    backgroundColor: 'rgb(16, 185, 129)'
-                }, {
-                    label: 'Credits Deficit',
-                    data: [12, 8, 15, 5, 10, 7],
-                    backgroundColor: 'rgb(239, 68, 68)'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Carbon Credits'
-                        }
-                    }
-                }
-            }
-        });
-
-        // Populate table
-        function populateTable() {
-            const tbody = document.getElementById('recordsTable');
-            tbody.innerHTML = dailyRecords.map(record => `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="py-3 px-4 text-sm text-gray-900">${record.date}</td>
-                    <td class="py-3 px-4 text-sm text-gray-900">${record.co2} kg CO₂</td>
-                    <td class="py-3 px-4 text-sm text-gray-500">1000 kg CO₂</td>
-                    <td class="py-3 px-4 text-sm font-medium text-gray-900">${record.credits} CC</td>
-                    <td class="py-3 px-4">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            record.status === 'earned' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                        }">
-                            ${record.status === 'earned' ? '✓ Credits Earned' : '⚠ Credits Required'}
-                        </span>
-                    </td>
-                </tr>
-            `).join('');
+            });
         }
 
-        // Update metrics
-        function updateMetrics() {
-            const newEmission = Math.floor(Math.random() * 300) + 700;
-            currentEmission = newEmission;
-            
-            const emissionPercentage = ((currentEmission / emissionLimit) * 100).toFixed(1);
-            const isNearLimit = currentEmission >= emissionLimit * 0.8;
-            const isOverLimit = currentEmission > emissionLimit;
+        // Fetch emissions from API (NO AUTHENTICATION)
+        async function fetchEmissions() {
+            try {
+                const response = await fetch(`${API_URL}/emissions/all`);
 
-            // Update display
-            document.getElementById('currentEmission').textContent = currentEmission;
-            document.getElementById('compliancePercent').textContent = emissionPercentage + '%';
+                if (!response.ok) {
+                    throw new Error('Failed to fetch emissions');
+                }
+
+                const emissions = await response.json();
+                allEmissionsData = emissions;
+                updateDashboard(emissions);
+                updateConnectionStatus(true);
+                
+            } catch (error) {
+                console.error('Fetch error:', error);
+                updateConnectionStatus(false, error.message);
+            }
+        }
+
+        // Update dashboard with real data
+        function updateDashboard(emissions) {
+            if (!emissions || emissions.length === 0) {
+                document.getElementById('recordsTable').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-gray-500">
+                            <div class="mb-2">⏳ No data yet. Waiting for Arduino data...</div>
+                            <div class="text-xs space-y-1">
+                                <div>✅ Make sure Arduino is connected via USB</div>
+                                <div>✅ Make sure you uploaded the Arduino code</div>
+                                <div>✅ Make sure serial-bridge.js is running</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Update current values (latest reading)
+            const latest = emissions[0];
+            document.getElementById('currentEmission').textContent = latest.co2_value.toFixed(1);
+            document.getElementById('currentTemp').textContent = latest.temperature ? latest.temperature.toFixed(1) : '--';
+            document.getElementById('currentHumidity').textContent = latest.humidity ? latest.humidity.toFixed(1) : '--';
+            document.getElementById('totalRecords').textContent = emissions.length;
+
+            // Update last update time
+            const lastTime = new Date(latest.timestamp).toLocaleTimeString();
+            document.getElementById('lastUpdate').textContent = lastTime;
+
+            // Calculate compliance
+            const compliance = ((latest.co2_value / EMISSION_LIMIT) * 100).toFixed(1);
+            document.getElementById('compliancePercent').textContent = compliance + '%';
             
-            // Update progress bar
             const bar = document.getElementById('complianceBar');
-            bar.style.width = Math.min(emissionPercentage, 100) + '%';
+            bar.style.width = Math.min(compliance, 100) + '%';
             bar.className = `h-2 rounded-full ${
-                isOverLimit ? 'bg-red-500' : isNearLimit ? 'bg-yellow-500' : 'bg-green-500'
+                compliance > 100 ? 'bg-red-500' : 
+                compliance > 80 ? 'bg-yellow-500' : 
+                'bg-green-500'
             }`;
 
             // Update alert banner
+            updateAlertBanner(latest.co2_value);
+
+            // Calculate statistics
+            const co2Values = emissions.map(e => e.co2_value);
+            const avgEmission = (co2Values.reduce((a, b) => a + b, 0) / co2Values.length).toFixed(1);
+            const peakEmission = Math.max(...co2Values).toFixed(1);
+            
+            document.getElementById('avgEmission').textContent = avgEmission;
+            document.getElementById('peakEmission').textContent = peakEmission;
+
+            // Update chart (last 20 readings)
+            const chartData = emissions.slice(0, 20).reverse();
+            emissionChart.data.labels = chartData.map(e => 
+                new Date(e.timestamp).toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                })
+            );
+            emissionChart.data.datasets[0].data = chartData.map(e => e.co2_value);
+            emissionChart.data.datasets[1].data = new Array(chartData.length).fill(EMISSION_LIMIT);
+            emissionChart.update('none');
+
+            // Update table
+            updateTable(emissions.slice(0, 10));
+        }
+
+        // Update table
+        function updateTable(emissions) {
+            const tbody = document.getElementById('recordsTable');
+            tbody.innerHTML = emissions.map(e => {
+                const isOverLimit = e.co2_value > EMISSION_LIMIT;
+                const statusClass = isOverLimit ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+                const statusText = isOverLimit ? '⚠ Over Limit' : '✓ Normal';
+                
+                return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-3 px-4 text-sm text-gray-900">
+                            ${new Date(e.timestamp).toLocaleString()}
+                        </td>
+                        <td class="py-3 px-4 text-sm text-gray-900">${e.sensor_id}</td>
+                        <td class="py-3 px-4 text-sm font-medium text-gray-900">${e.co2_value.toFixed(2)}</td>
+                        <td class="py-3 px-4 text-sm text-gray-900">${e.temperature ? e.temperature.toFixed(1) : '--'}</td>
+                        <td class="py-3 px-4 text-sm text-gray-900">${e.humidity ? e.humidity.toFixed(1) : '--'}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update alert banner
+        function updateAlertBanner(co2Value) {
             const banner = document.getElementById('alertBanner');
+            const isNearLimit = co2Value >= EMISSION_LIMIT * 0.8;
+            const isOverLimit = co2Value > EMISSION_LIMIT;
+
             if (isNearLimit) {
                 banner.classList.remove('hidden');
                 banner.className = `mb-6 p-4 rounded-lg flex ${
@@ -327,38 +336,88 @@
                 
                 const title = document.getElementById('alertTitle');
                 const message = document.getElementById('alertMessage');
+                
                 title.className = `font-semibold ${isOverLimit ? 'text-red-900' : 'text-yellow-900'}`;
                 message.className = `text-sm ${isOverLimit ? 'text-red-700' : 'text-yellow-700'}`;
                 
-                title.textContent = isOverLimit ? 'EMISSION LIMIT EXCEEDED!' : 'WARNING: Approaching Emission Limit';
+                title.textContent = isOverLimit ? '🚨 EMISSION LIMIT EXCEEDED!' : '⚠️ WARNING: Approaching Limit';
                 message.textContent = isOverLimit 
-                    ? `Current emissions: ${currentEmission} kg CO₂ (${emissionPercentage}% of limit). Immediate action required.`
-                    : `Current emissions at ${emissionPercentage}% of daily limit. Consider reducing production output.`;
+                    ? `Current: ${co2Value.toFixed(1)} kg/h (Limit: ${EMISSION_LIMIT} kg/h). Immediate action required!`
+                    : `Current: ${co2Value.toFixed(1)} kg/h (${((co2Value/EMISSION_LIMIT)*100).toFixed(1)}% of limit)`;
             } else {
                 banner.classList.add('hidden');
             }
-
-            // Update chart
-            const now = new Date();
-            const timeLabel = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            
-            emissionChart.data.labels.shift();
-            emissionChart.data.labels.push(timeLabel);
-            emissionChart.data.datasets[0].data.shift();
-            emissionChart.data.datasets[0].data.push(newEmission);
-            emissionChart.update();
         }
 
-        // Generate report function
-        function generateReport() {
-            alert('Generating compliance report for regulatory submission...');
+        // Update connection status
+        function updateConnectionStatus(connected, error = null) {
+            const status = document.getElementById('connectionStatus');
+            if (connected) {
+                status.className = 'mb-6 p-4 rounded-lg bg-green-50 border border-green-200';
+                status.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <p class="text-green-900 font-semibold">✅ Connected - Receiving live data from Arduino</p>
+                    </div>
+                `;
+            } else {
+                status.className = 'mb-6 p-4 rounded-lg bg-red-50 border border-red-200';
+                status.innerHTML = `
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <p class="text-red-900 font-semibold">❌ Connection Error: ${error || 'Cannot reach server'}</p>
+                        </div>
+                        <div class="text-sm text-red-700 pl-6">
+                            <div>Make sure:</div>
+                            <div>• Backend is running: <code class="bg-red-100 px-1 rounded">npm run dev</code> in Terminal 1</div>
+                            <div>• Serial bridge is running: <code class="bg-red-100 px-1 rounded">node serial-bridge.js</code> in Terminal 2</div>
+                            <div>• Arduino is connected via USB</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Refresh data manually
+        function refreshData() {
+            console.log('🔄 Manual refresh triggered');
+            fetchEmissions();
+        }
+
+        // Export to CSV
+        function exportData() {
+            if (allEmissionsData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+
+            let csv = 'Timestamp,Sensor ID,CO2 (kg/h),Temperature (°C),Humidity (%)\n';
+            allEmissionsData.forEach(e => {
+                csv += `${e.timestamp},${e.sensor_id},${e.co2_value},${e.temperature || ''},${e.humidity || ''}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `emissions_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            
+            console.log('✅ CSV exported successfully');
         }
 
         // Initialize
-        populateTable();
-        
-        // Update every 5 seconds
-        setInterval(updateMetrics, 5000);
+        console.log('🌱 Carbon Dashboard initializing...');
+        initializeChart();
+        fetchEmissions();
+
+        // Auto-refresh every 5 seconds
+        setInterval(fetchEmissions, REFRESH_INTERVAL);
+
+        console.log('✅ Dashboard initialized');
+        console.log('📡 Fetching data every', REFRESH_INTERVAL / 1000, 'seconds');
+        console.log('🔗 API URL:', API_URL);
     </script>
 </body>
 </html>
