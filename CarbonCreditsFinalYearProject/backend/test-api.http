@@ -1,0 +1,23 @@
+### Register User
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+    "name": "Test Company",
+    "email": "test@company.com",
+    "password": "test123",
+    "role": "admin"
+}
+
+### Login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "test@company.com",
+    "password": "test123"
+}
+
+### Get Dashboard Stats (replace TOKEN with actual token from login)
+GET http://localhost:3000/api/dashboard/stats
+Authorization: Bearer YOUR_TOKEN_HERE
