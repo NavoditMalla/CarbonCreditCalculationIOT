@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — Carbon Emission Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Header — identical to dashboard -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center gap-3">
+            <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Carbon Emission Monitor</h1>
+                <p class="text-sm text-gray-500">Real-time Arduino Data Dashboard</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+
+        <!-- Status bar -->
+        <div class="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200">
+            <div class="flex items-center gap-3">
+                <div class="animate-pulse w-3 h-3 bg-blue-500 rounded-full"></div>
+                <p class="text-blue-900 font-semibold">Create a new account to access the monitoring dashboard</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+            <!-- Left: roles / info -->
+            <div class="lg:col-span-2 flex flex-col gap-4">
+
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900 mb-1">Create Your Account</h2>
+                    <p class="text-sm text-gray-500 leading-relaxed">Join the Carbon Monitor platform to track emissions and manage carbon credits.</p>
+                </div>
+
+                <!-- Role cards — same card style as dashboard stat cards -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-4">Choose your role</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-green-300 hover:bg-green-50 transition-colors cursor-pointer" onclick="selectRole('operator')">
+                            <div class="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-semibold text-gray-900">Operator</p>
+                                    <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Default</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-0.5">View dashboard, monitor sensors, export reports</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer" onclick="selectRole('admin')">
+                            <div class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-900">Admin</p>
+                                <p class="text-xs text-gray-500 mt-0.5">Full access — manage users, sensors & system settings</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white p-5 rounded-lg shadow-sm border">
+                        <p class="text-sm text-gray-500 mb-1">Data Points</p>
+                        <p class="text-2xl font-bold text-gray-900">Live</p>
+                        <p class="text-xs text-gray-500 mt-1">Arduino sensor feed</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm border">
+                        <p class="text-sm text-gray-500 mb-1">Credit Limit</p>
+                        <p class="text-2xl font-bold text-green-600">10kt</p>
+                        <p class="text-xs text-gray-500 mt-1">Monthly CO₂ cap</p>
+                    </div>
+                </div>
+
+                <!-- Info box -->
+                <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <h4 class="font-semibold text-blue-900 mb-2">How Credits are Calculated</h4>
+                    <div class="text-sm text-blue-800 space-y-1">
+                        <p><strong>• Monthly Limit:</strong> 10,000 kg CO₂</p>
+                        <p><strong>• Daily Limit:</strong> 333.33 kg CO₂</p>
+                        <p><strong>• 1 Credit =</strong> 1 kg CO₂ reduced</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right: registration form -->
+            <div class="lg:col-span-3">
+                <div class="bg-white rounded-lg shadow-sm border p-8">
+
+                    <div class="flex items-center gap-3 pb-5 mb-6 border-b border-gray-100">
+                        <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Create Account</h2>
+                            <p class="text-sm text-gray-500">Fill in your details to get started</p>
+                        </div>
+                    </div>
+
+                    <!-- Error banner -->
+                    <div id="errorBanner" class="hidden mb-5 p-4 rounded-lg bg-red-50 border border-red-200">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <p id="errorText" class="text-red-900 font-semibold text-sm"></p>
+                        </div>
+                    </div>
+
+                    <!-- Success banner -->
+                    <div id="successBanner" class="hidden mb-5 p-4 rounded-lg bg-green-50 border border-green-200">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                            <p id="successText" class="text-green-900 font-semibold text-sm"></p>
+                        </div>
+                    </div>
+
+                    <form id="registerForm" onsubmit="handleRegister(event)" autocomplete="on">
+
+                        <!-- Name + Role row -->
+                        <div class="grid grid-cols-2 gap-4 mb-5">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                <div class="relative">
+                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                    <input
+                                        type="text" id="name" name="name" autocomplete="name" required
+                                        placeholder="Your full name"
+                                        class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                                <div class="relative">
+                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                    </svg>
+                                    <select
+                                        id="role" name="role"
+                                        class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm bg-white appearance-none"
+                                    >
+                                        <option value="operator">Operator</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <div class="relative">
+                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <input
+                                    type="email" id="email" name="email" autocomplete="email" required
+                                    placeholder="you@company.com"
+                                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                            <div class="relative">
+                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                                <input
+                                    type="password" id="password" name="password" autocomplete="new-password" required
+                                    placeholder="Create a password"
+                                    oninput="checkStrength(this.value)"
+                                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                />
+                            </div>
+                            <!-- Password strength — same progress bar style as compliance bar in dashboard -->
+                            <div class="mt-2">
+                                <div class="flex gap-1">
+                                    <div id="s1" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+                                    <div id="s2" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+                                    <div id="s3" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+                                    <div id="s4" class="flex-1 h-1.5 rounded-full bg-gray-200 transition-all"></div>
+                                </div>
+                                <p id="strengthLabel" class="text-xs text-gray-400 mt-1">Enter a password</p>
+                            </div>
+                        </div>
+
+                        <!-- Confirm password -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                            <div class="relative">
+                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                <input
+                                    type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required
+                                    placeholder="Repeat your password"
+                                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <button
+                            type="submit" id="registerBtn"
+                            class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-md text-sm"
+                        >
+                            ✅ Create Account
+                        </button>
+                    </form>
+
+                    <div class="flex items-center gap-3 my-5">
+                        <div class="flex-1 border-t border-gray-200"></div>
+                        <span class="text-xs text-gray-400 uppercase tracking-wider">already have an account?</span>
+                        <div class="flex-1 border-t border-gray-200"></div>
+                    </div>
+
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600">
+                            <a href="login.html" class="text-green-600 font-semibold hover:text-green-700">← Back to Sign In</a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Info strip -->
+                <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-4">
+                    <div class="flex items-center gap-3 text-sm text-blue-800">
+                        <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p>After creating your account you'll be redirected to <strong>login.html</strong> to sign in. Make sure the backend is running on <code class="bg-blue-100 px-1 rounded">localhost:3000</code>.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+
+        function selectRole(role) {
+            document.getElementById('role').value = role;
+        }
+
+        function checkStrength(val) {
+            let score = 0;
+            if (val.length >= 8) score++;
+            if (/[A-Z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+
+            const barColors = ['', 'bg-red-400', 'bg-yellow-400', 'bg-blue-400', 'bg-green-500'];
+            const labels    = ['Enter a password', 'Weak', 'Fair', 'Good', 'Strong'];
+            const textCols  = ['text-gray-400', 'text-red-500', 'text-yellow-600', 'text-blue-600', 'text-green-600'];
+
+            for (let i = 1; i <= 4; i++) {
+                const seg = document.getElementById('s' + i);
+                seg.className = `flex-1 h-1.5 rounded-full transition-all ${i <= score ? barColors[score] : 'bg-gray-200'}`;
+            }
+            const lbl = document.getElementById('strengthLabel');
+            lbl.textContent = val.length === 0 ? 'Enter a password' : labels[score] || 'Too short';
+            lbl.className = `text-xs mt-1 ${textCols[val.length === 0 ? 0 : score] || textCols[0]}`;
+        }
+
+        function showBanner(type, msg) {
+            document.getElementById('errorBanner').classList.add('hidden');
+            document.getElementById('successBanner').classList.add('hidden');
+            if (type === 'error') {
+                document.getElementById('errorText').textContent = msg;
+                document.getElementById('errorBanner').classList.remove('hidden');
+            } else {
+                document.getElementById('successText').textContent = msg;
+                document.getElementById('successBanner').classList.remove('hidden');
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            const name     = document.getElementById('name').value.trim();
+            const email    = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm  = document.getElementById('confirmPassword').value;
+            const role     = document.getElementById('role').value;
+            const btn      = document.getElementById('registerBtn');
+
+            document.getElementById('errorBanner').classList.add('hidden');
+            document.getElementById('successBanner').classList.add('hidden');
+
+            if (password !== confirm) { showBanner('error', 'Passwords do not match.'); return; }
+            if (password.length < 6)  { showBanner('error', 'Password must be at least 6 characters.'); return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Creating account…';
+
+            try {
+                const res = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, role })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showBanner('success', '✅ Account created! Redirecting to sign in…');
+                    setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+                } else {
+                    showBanner('error', data.error || 'Registration failed. Please try again.');
+                    btn.disabled = false;
+                    btn.textContent = '✅ Create Account';
+                }
+            } catch (err) {
+                showBanner('error', 'Connection error. Make sure the backend is running on port 3000.');
+                btn.disabled = false;
+                btn.textContent = '✅ Create Account';
+            }
+        }
+
+        // Redirect if already logged in
+        if (localStorage.getItem('authToken')) {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>

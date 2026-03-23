@@ -43,7 +43,7 @@ const authenticateToken = (req, res, next) => {
     }
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: 'Invalid token' });
+        if (err) return res.status(403).json({ error: 'Invalid or expired token' });
         req.user = user;
         next();
     });
@@ -134,11 +134,16 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+// Verify token (used by dashboard on load to confirm session is valid)
+app.get('/api/auth/verify', authenticateToken, (req, res) => {
+    res.json({ valid: true, user: req.user });
+});
+
 // ==========================================
 // ROUTES - EMISSIONS
 // ==========================================
 
-// Insert emission data
+// Insert emission data (protected)
 app.post('/api/emissions', authenticateToken, async (req, res) => {
     try {
         const { sensor_id, co2_value, pm25_value, temperature, humidity } = req.body;
@@ -151,17 +156,14 @@ app.post('/api/emissions', authenticateToken, async (req, res) => {
             [emission_id, co2_value, pm25_value, temperature, humidity, sensor_id]
         );
 
-        res.status(201).json({
-            message: 'Emission data recorded',
-            emission_id
-        });
+        res.status(201).json({ message: 'Emission data recorded', emission_id });
     } catch (error) {
         console.error('Emission insert error:', error);
         res.status(500).json({ error: 'Failed to record emission' });
     }
 });
 
-// Get recent emissions
+// Get recent emissions (protected)
 app.get('/api/emissions/recent', authenticateToken, async (req, res) => {
     try {
         const [emissions] = await pool.query(
@@ -173,11 +175,89 @@ app.get('/api/emissions/recent', authenticateToken, async (req, res) => {
             LIMIT 50`,
             [req.user.user_id]
         );
-
         res.json(emissions);
     } catch (error) {
         console.error('Fetch emissions error:', error);
         res.status(500).json({ error: 'Failed to fetch emissions' });
+    }
+});
+
+// PUBLIC: Get all emissions for dashboard (no auth required — Arduino bridge writes here)
+app.get('/api/emissions/all', async (req, res) => {
+    try {
+        const [emissions] = await pool.query(
+            `SELECT 
+                ed.emission_id,
+                ed.timestamp,
+                ed.co2_value,
+                ed.temperature,
+                ed.humidity,
+                ed.sensor_id
+            FROM Emission_Data ed
+            ORDER BY ed.timestamp DESC
+            LIMIT 50`
+        );
+        console.log(`📊 Fetched ${emissions.length} emission records`);
+        res.json(emissions);
+    } catch (error) {
+        console.error('❌ Fetch all emissions error:', error);
+        res.status(500).json({ error: 'Failed to fetch emissions' });
+    }
+});
+
+// ==========================================
+// ROUTES - AI PREDICTIONS
+// (populated by predict_emissions.py)
+// ==========================================
+
+// PUBLIC: Get all predictions from predict_emissions.py output
+app.get('/api/predictions', async (req, res) => {
+    try {
+        const [predictions] = await pool.query(
+            `SELECT 
+                prediction_id,
+                timestamp,
+                predicted_co2,
+                confidence,
+                created_at
+            FROM Emission_Predictions
+            ORDER BY timestamp ASC
+            LIMIT 24`
+        );
+
+        if (predictions.length === 0) {
+            return res.json([]);  // Empty — tells dashboard to show "run the script" hint
+        }
+
+        // Enrich with hour / day fields (mirrors predict_emissions.py output)
+        const enriched = predictions.map(p => {
+            const d = new Date(p.timestamp);
+            return {
+                ...p,
+                hour: d.getHours(),
+                day: d.toISOString().split('T')[0],
+                predicted_co2: parseFloat(p.predicted_co2)
+            };
+        });
+
+        console.log(`🔮 Served ${enriched.length} prediction records`);
+        res.json(enriched);
+    } catch (error) {
+        console.error('❌ Fetch predictions error:', error);
+        res.status(500).json({ error: 'Failed to fetch predictions' });
+    }
+});
+
+// PUBLIC: Get prediction statistics
+app.get('/api/predictions/stats', async (req, res) => {
+    try {
+        const [stats] = await pool.query(
+            `SELECT * FROM Prediction_Statistics ORDER BY created_at DESC LIMIT 1`
+        );
+        res.json(stats[0] || null);
+    } catch (error) {
+        console.error('❌ Fetch prediction stats error:', error);
+        res.status(500).json({ error: 'Failed to fetch prediction statistics' });
     }
 });
 
@@ -187,7 +267,6 @@ app.get('/api/emissions/recent', authenticateToken, async (req, res) => {
 
 app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
     try {
-        // Current emission
         const [[currentEmission]] = await pool.query(
             `SELECT co2_value 
             FROM Emission_Data ed
@@ -197,7 +276,6 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
             [req.user.user_id]
         );
 
-        // Total credits
         const [[totalCredits]] = await pool.query(
             `SELECT COALESCE(SUM(credit_amount), 0) as total
             FROM Carbon_Credit cc
@@ -208,13 +286,11 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
             [req.user.user_id]
         );
 
-        // Active sensors
         const [[activeSensors]] = await pool.query(
             'SELECT COUNT(*) as count FROM Sensor WHERE user_id = ? AND status = "active"',
             [req.user.user_id]
         );
 
-        // Unread alerts
         const [[unreadAlerts]] = await pool.query(
             'SELECT COUNT(*) as count FROM Alert WHERE user_id = ? AND is_read = FALSE',
             [req.user.user_id]
@@ -245,7 +321,6 @@ app.get('/api/alerts', authenticateToken, async (req, res) => {
             LIMIT 50`,
             [req.user.user_id]
         );
-
         res.json(alerts);
     } catch (error) {
         console.error('Fetch alerts error:', error);
@@ -258,34 +333,6 @@ app.get('/api/alerts', authenticateToken, async (req, res) => {
 // ==========================================
 
 const PORT = process.env.PORT || 3000;
-// ==========================================
-// GET RECENT EMISSIONS (for dashboard)
-// ==========================================
-
-
-// PUBLIC endpoint - Get all emissions (no authentication required)
-app.get('/api/emissions/all', async (req, res) => {
-    try {
-        const [emissions] = await pool.query(
-            `SELECT 
-                ed.emission_id,
-                ed.timestamp,
-                ed.co2_value,
-                ed.temperature,
-                ed.humidity,
-                ed.sensor_id
-            FROM Emission_Data ed
-            ORDER BY ed.timestamp DESC
-            LIMIT 50`
-        );
-
-        console.log(`📊 Fetched ${emissions.length} emission records`);
-        res.json(emissions);
-    } catch (error) {
-        console.error('❌ Fetch all emissions error:', error);
-        res.status(500).json({ error: 'Failed to fetch emissions' });
-    }
-});
 
 app.listen(PORT, () => {
     console.log(`
