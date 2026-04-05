@@ -6,6 +6,14 @@
     <title>Carbon Emission Monitor - Real Data</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <!-- Auth guard: redirect immediately if no token -->
+    <script>
+        (function() {
+            if (!localStorage.getItem('authToken')) {
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
@@ -22,10 +30,23 @@
                     <p class="text-sm text-gray-500">Real-time Arduino Data Dashboard</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <button onclick="refreshData()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            <div class="flex items-center gap-3">
+                <!-- User info badge -->
+                <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full">
+                    <div id="userAvatar" class="w-7 h-7 bg-green-600 rounded-full flex items-center justify-center text-white text-xs font-bold">?</div>
+                    <span id="userName" class="text-sm font-medium text-gray-900">Loading...</span>
+                    <span id="userRole" class="text-xs text-gray-400 uppercase tracking-wide"></span>
+                </div>
+                <!-- Token expiry warning -->
+                <div id="tokenWarning" class="hidden items-center gap-1.5 px-3 py-1.5 bg-yellow-100 border border-yellow-300 rounded-full text-xs font-semibold text-yellow-800">
+                    ⚠ Session expiring soon
+                </div>
+                <button onclick="refreshData()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
                     🔄 Refresh Now
                 </button>
+                <a href="signout.html" class="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-700 border border-gray-200 transition-colors text-sm font-medium">
+                    Sign Out
+                </a>
             </div>
         </div>
     </div>
@@ -113,7 +134,6 @@
                 </div>
             </div>
 
-            <!-- Credit Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white p-6 rounded-lg shadow-sm border-2 border-blue-200">
                     <p class="text-sm text-gray-600 mb-2">Total Emissions</p>
@@ -126,21 +146,18 @@
                         <p class="text-xs text-gray-500 mt-1"><span id="emissionPercent">0</span>% of monthly limit</p>
                     </div>
                 </div>
-
                 <div class="bg-white p-6 rounded-lg shadow-sm border-2 border-green-200">
                     <p class="text-sm text-gray-600 mb-2">Credits Earned</p>
                     <p id="creditsEarned" class="text-3xl font-bold text-green-700">--</p>
                     <p class="text-xs text-gray-500 mt-1">Carbon Credits (CC)</p>
                     <p class="text-xs text-green-600 mt-2">✓ Below emission limit</p>
                 </div>
-
                 <div class="bg-white p-6 rounded-lg shadow-sm border-2 border-red-200">
                     <p class="text-sm text-gray-600 mb-2">Credits Required</p>
                     <p id="creditsDeficit" class="text-3xl font-bold text-red-700">--</p>
                     <p class="text-xs text-gray-500 mt-1">Carbon Credits (CC)</p>
                     <p class="text-xs text-red-600 mt-2">⚠ Purchase needed</p>
                 </div>
-
                 <div class="bg-white p-6 rounded-lg shadow-sm border-2 border-purple-200">
                     <p class="text-sm text-gray-600 mb-2">Net Balance</p>
                     <p id="netCredits" class="text-3xl font-bold text-purple-700">--</p>
@@ -149,13 +166,11 @@
                 </div>
             </div>
 
-            <!-- Credit Chart -->
             <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Carbon Credit Breakdown</h3>
                 <canvas id="creditChart" height="80"></canvas>
             </div>
 
-            <!-- Daily Credit Table -->
             <div class="bg-white p-6 rounded-lg shadow-sm">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900">Daily Credit Calculation</h3>
@@ -176,23 +191,20 @@
                             </tr>
                         </thead>
                         <tbody id="creditTable">
-                            <tr>
-                                <td colspan="6" class="text-center py-8 text-gray-500">Calculating credits...</td>
-                            </tr>
+                            <tr><td colspan="6" class="text-center py-8 text-gray-500">Calculating credits...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Credit Formula Explanation -->
             <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-6">
-                <h4 class="font-semibold text-blue-900 mb-2"> How Credits are Calculated:</h4>
+                <h4 class="font-semibold text-blue-900 mb-2">How Credits are Calculated:</h4>
                 <div class="text-sm text-blue-800 space-y-1">
                     <p><strong>• Monthly Limit:</strong> 10,000 kg CO₂ (10 Kilotonnes)</p>
                     <p><strong>• Daily Limit:</strong> 333.33 kg CO₂ (Monthly limit ÷ 30 days)</p>
                     <p><strong>• Credit Calculation:</strong> 1 Carbon Credit = 1 kg CO₂ reduced</p>
-                    <p><strong>• If emissions < daily limit:</strong> Credits Earned = (Daily Limit - Actual Emissions)</p>
-                    <p><strong>• If emissions > daily limit:</strong> Credits Deficit = (Actual Emissions - Daily Limit)</p>
+                    <p><strong>• If emissions &lt; daily limit:</strong> Credits Earned = (Daily Limit - Actual Emissions)</p>
+                    <p><strong>• If emissions &gt; daily limit:</strong> Credits Deficit = (Actual Emissions - Daily Limit)</p>
                 </div>
             </div>
         </div>
@@ -227,9 +239,7 @@
                         </tr>
                     </thead>
                     <tbody id="recordsTable">
-                        <tr>
-                            <td colspan="6" class="text-center py-8 text-gray-500">Loading data...</td>
-                        </tr>
+                        <tr><td colspan="6" class="text-center py-8 text-gray-500">Loading data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -242,13 +252,11 @@
                 <p id="avgEmission" class="text-3xl font-bold text-green-700">--</p>
                 <p class="text-xs text-green-600 mt-1">kg CO₂/hour (Last hour)</p>
             </div>
-            
             <div class="bg-blue-50 border border-blue-200 p-6 rounded-lg">
                 <h3 class="text-sm font-semibold text-blue-900 mb-2">Peak Emission</h3>
                 <p id="peakEmission" class="text-3xl font-bold text-blue-700">--</p>
                 <p class="text-xs text-blue-600 mt-1">Maximum recorded</p>
             </div>
-            
             <div class="bg-purple-50 border border-purple-200 p-6 rounded-lg">
                 <h3 class="text-sm font-semibold text-purple-900 mb-2">Data Collection</h3>
                 <p id="dataStatus" class="text-3xl font-bold text-purple-700">Active</p>
@@ -256,13 +264,8 @@
             </div>
         </div>
 
-        <!-- ==========================================
-             AI PREDICTIONS SECTION
-             Powered by predict_emissions.py
-             ========================================== -->
+        <!-- AI PREDICTIONS SECTION -->
         <div class="bg-gradient-to-r from-violet-50 to-indigo-50 p-6 rounded-lg shadow-md border-2 border-violet-200 mb-6">
-
-            <!-- Section Header -->
             <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 bg-violet-600 rounded-full flex items-center justify-center">
@@ -289,7 +292,6 @@
                 </div>
             </div>
 
-            <!-- How to run the model -->
             <div id="predictionRunHint" class="bg-violet-100 border border-violet-300 p-4 rounded-lg mb-6">
                 <div class="flex items-start gap-3">
                     <span class="text-xl">💡</span>
@@ -300,7 +302,6 @@
                 </div>
             </div>
 
-            <!-- Prediction Stats Cards -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                 <div class="bg-white p-4 rounded-lg shadow-sm border-2 border-violet-100">
                     <p class="text-xs text-gray-500 mb-1">Avg Predicted</p>
@@ -329,7 +330,6 @@
                 </div>
             </div>
 
-            <!-- Confidence Breakdown Pills -->
             <div class="flex items-center gap-3 mb-6">
                 <span class="text-sm font-medium text-gray-600">Confidence Levels:</span>
                 <div class="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 border border-green-300 rounded-full">
@@ -347,7 +347,6 @@
                 <span class="text-xs text-gray-400 ml-2">· High = next 6h · Medium = 6-12h · Low = 12-24h</span>
             </div>
 
-            <!-- Prediction Chart -->
             <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900">24-Hour CO₂ Forecast</h3>
@@ -359,7 +358,6 @@
                 <canvas id="predictionChart" height="100"></canvas>
             </div>
 
-            <!-- Prediction Table -->
             <div class="bg-white p-6 rounded-lg shadow-sm">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900">Hourly Forecast Details</h3>
@@ -403,7 +401,6 @@
                 </div>
             </div>
 
-            <!-- Model Info Box -->
             <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-lg mt-6">
                 <h4 class="font-semibold text-indigo-900 mb-2">🤖 About the AI Model:</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-indigo-800">
@@ -428,20 +425,16 @@
                 </div>
             </div>
         </div>
-        <!-- END AI PREDICTIONS SECTION -->
 
-    </div><!-- end max-w container -->
+    </div>
 
     <script>
-        // ==========================================
-        // CONFIGURATION
-        // ==========================================
         const API_URL = 'http://localhost:3000/api';
         const EMISSION_LIMIT = 1000;
         const MONTHLY_LIMIT = 10000;
         const DAILY_LIMIT = MONTHLY_LIMIT / 30;
         const REFRESH_INTERVAL = 5000;
-        const PREDICTION_REFRESH_INTERVAL = 60000; // refresh predictions every 60s
+        const PREDICTION_REFRESH_INTERVAL = 60000;
 
         let emissionChart = null;
         let creditChart = null;
@@ -449,6 +442,40 @@
         let allEmissionsData = [];
         let dailyCreditData = [];
         let allPredictionsData = [];
+
+        // ==========================================
+        // AUTH: USER DISPLAY + TOKEN CHECK
+        // ==========================================
+        function initUserDisplay() {
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (user.name) {
+                    document.getElementById('userName').textContent = user.name;
+                    document.getElementById('userRole').textContent = user.role || '';
+                    document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+                }
+
+                // Check token expiry
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        const hoursLeft = (payload.exp * 1000 - Date.now()) / 3600000;
+
+                        if (hoursLeft <= 0) {
+                            // Token expired — force sign out
+                            localStorage.removeItem('authToken');
+                            localStorage.removeItem('user');
+                            window.location.href = 'login.html';
+                        } else if (hoursLeft <= 2) {
+                            // Show expiry warning
+                            document.getElementById('tokenWarning').classList.remove('hidden');
+                            document.getElementById('tokenWarning').classList.add('flex');
+                        }
+                    } catch (e) { /* malformed token — ignore */ }
+                }
+            } catch (e) { /* ignore */ }
+        }
 
         // ==========================================
         // CHART INITIALIZATION
@@ -480,15 +507,9 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    plugins: {
-                        legend: { display: true, position: 'bottom' },
-                        tooltip: { mode: 'index', intersect: false }
-                    },
+                    plugins: { legend: { display: true, position: 'bottom' }, tooltip: { mode: 'index', intersect: false } },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: { display: true, text: 'CO₂ (kg/hour)' }
-                        },
+                        y: { beginAtZero: true, title: { display: true, text: 'CO₂ (kg/hour)' } },
                         x: { title: { display: true, text: 'Time' } }
                     }
                 }
@@ -518,15 +539,9 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    plugins: {
-                        legend: { display: true, position: 'bottom' },
-                        tooltip: { mode: 'index', intersect: false }
-                    },
+                    plugins: { legend: { display: true, position: 'bottom' }, tooltip: { mode: 'index', intersect: false } },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: { display: true, text: 'Carbon Credits (CC)' }
-                        },
+                        y: { beginAtZero: true, title: { display: true, text: 'Carbon Credits (CC)' } },
                         x: { title: { display: true, text: 'Date' } }
                     }
                 }
@@ -540,47 +555,10 @@
                 data: {
                     labels: [],
                     datasets: [
-                        {
-                            label: 'High Confidence',
-                            data: [],
-                            borderColor: 'rgb(124, 58, 237)',
-                            backgroundColor: 'rgba(124, 58, 237, 0.08)',
-                            tension: 0.4,
-                            borderWidth: 2.5,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            fill: false
-                        },
-                        {
-                            label: 'Medium Confidence',
-                            data: [],
-                            borderColor: 'rgb(245, 158, 11)',
-                            backgroundColor: 'rgba(245, 158, 11, 0.05)',
-                            tension: 0.4,
-                            borderWidth: 2,
-                            pointRadius: 3,
-                            borderDash: [4, 2],
-                            fill: false
-                        },
-                        {
-                            label: 'Low Confidence',
-                            data: [],
-                            borderColor: 'rgb(239, 68, 68)',
-                            tension: 0.4,
-                            borderWidth: 2,
-                            pointRadius: 3,
-                            borderDash: [8, 4],
-                            fill: false
-                        },
-                        {
-                            label: 'Emission Limit (1000)',
-                            data: [],
-                            borderColor: 'rgba(220, 38, 38, 0.5)',
-                            borderDash: [6, 3],
-                            borderWidth: 1.5,
-                            pointRadius: 0,
-                            fill: false
-                        }
+                        { label: 'High Confidence', data: [], borderColor: 'rgb(124, 58, 237)', tension: 0.4, borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6, fill: false },
+                        { label: 'Medium Confidence', data: [], borderColor: 'rgb(245, 158, 11)', tension: 0.4, borderWidth: 2, pointRadius: 3, borderDash: [4, 2], fill: false },
+                        { label: 'Low Confidence', data: [], borderColor: 'rgb(239, 68, 68)', tension: 0.4, borderWidth: 2, pointRadius: 3, borderDash: [8, 4], fill: false },
+                        { label: 'Emission Limit (1000)', data: [], borderColor: 'rgba(220, 38, 38, 0.5)', borderDash: [6, 3], borderWidth: 1.5, pointRadius: 0, fill: false }
                     ]
                 },
                 options: {
@@ -589,41 +567,23 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { display: true, position: 'bottom' },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    if (context.datasetIndex === 3) return null;
-                                    const val = context.parsed.y;
-                                    if (val === null) return null;
-                                    return `${context.dataset.label}: ${val.toFixed(2)} kg/hr`;
-                                }
-                            }
-                        }
+                        tooltip: { callbacks: { label: function(c) { if (c.datasetIndex === 3 || c.parsed.y === null) return null; return `${c.dataset.label}: ${c.parsed.y.toFixed(2)} kg/hr`; } } }
                     },
                     scales: {
-                        y: {
-                            beginAtZero: false,
-                            title: { display: true, text: 'Predicted CO₂ (kg/hour)' },
-                            grid: { color: 'rgba(0,0,0,0.05)' }
-                        },
-                        x: {
-                            title: { display: true, text: 'Forecast Time' },
-                            ticks: { maxTicksLimit: 12, maxRotation: 45 }
-                        }
+                        y: { beginAtZero: false, title: { display: true, text: 'Predicted CO₂ (kg/hour)' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { title: { display: true, text: 'Forecast Time' }, ticks: { maxTicksLimit: 12, maxRotation: 45 } }
                     }
                 }
             });
         }
 
         // ==========================================
-        // FETCH PREDICTIONS FROM DATABASE
+        // FETCH PREDICTIONS
         // ==========================================
         async function fetchPredictions() {
             try {
-                // Try fetching from the Emission_Predictions table via API
                 const response = await fetch(`${API_URL}/predictions`);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
                 const predictions = await response.json();
                 if (predictions && predictions.length > 0) {
                     allPredictionsData = predictions;
@@ -634,18 +594,14 @@
                     setPredictionStatus('empty', 'No predictions in database');
                 }
             } catch (err) {
-                // Fallback: try loading from future_predictions.csv via a local endpoint
-                console.warn('Predictions API not available, trying CSV fallback...', err.message);
                 tryLoadPredictionsFromCSV();
             }
         }
 
         async function tryLoadPredictionsFromCSV() {
             try {
-                // Try a common express static file route
                 const response = await fetch(`http://localhost:3000/future_predictions.csv`);
                 if (!response.ok) throw new Error('CSV not available');
-
                 const csvText = await response.text();
                 const predictions = parseCSV(csvText);
                 if (predictions.length > 0) {
@@ -669,14 +625,7 @@
                 const vals = line.split(',');
                 const obj = {};
                 headers.forEach((h, i) => { obj[h] = vals[i] ? vals[i].trim() : ''; });
-                // Normalize field names to match DB format
-                return {
-                    timestamp: obj['timestamp'] || obj['Timestamp'] || '',
-                    hour: parseInt(obj['hour'] || obj['Hour'] || 0),
-                    day: obj['day'] || obj['Day'] || '',
-                    predicted_co2: parseFloat(obj['predicted_co2'] || obj['Predicted CO2'] || 0),
-                    confidence: obj['confidence'] || obj['Confidence'] || 'low'
-                };
+                return { timestamp: obj['timestamp'] || '', hour: parseInt(obj['hour'] || 0), day: obj['day'] || '', predicted_co2: parseFloat(obj['predicted_co2'] || 0), confidence: obj['confidence'] || 'low' };
             }).filter(r => r.predicted_co2 > 0);
         }
 
@@ -693,172 +642,77 @@
             el.innerHTML = `<div class="w-2 h-2 rounded-full ${c.dot}"></div><span>${msg}</span>`;
         }
 
-        // ==========================================
-        // UPDATE PREDICTION DISPLAY
-        // ==========================================
         function updatePredictionDisplay(predictions) {
             if (!predictions || predictions.length === 0) return;
-
-            // Normalize field — DB uses predicted_co2
-            predictions = predictions.map(p => ({
-                ...p,
-                predicted_co2: parseFloat(p.predicted_co2 || p.Predicted_CO2 || 0),
-                confidence: (p.confidence || 'low').toLowerCase()
-            }));
-
+            predictions = predictions.map(p => ({ ...p, predicted_co2: parseFloat(p.predicted_co2 || 0), confidence: (p.confidence || 'low').toLowerCase() }));
             allPredictionsData = predictions;
-
-            // Stats
             const values = predictions.map(p => p.predicted_co2);
             const avg = values.reduce((a, b) => a + b, 0) / values.length;
-            const max = Math.max(...values);
-            const min = Math.min(...values);
             const overLimit = values.filter(v => v > EMISSION_LIMIT).length;
-            const confHigh   = predictions.filter(p => p.confidence === 'high').length;
-            const confMedium = predictions.filter(p => p.confidence === 'medium').length;
-            const confLow    = predictions.filter(p => p.confidence === 'low').length;
-
             document.getElementById('predAvg').textContent = avg.toFixed(1);
-            document.getElementById('predMax').textContent = max.toFixed(1);
-            document.getElementById('predMin').textContent = min.toFixed(1);
+            document.getElementById('predMax').textContent = Math.max(...values).toFixed(1);
+            document.getElementById('predMin').textContent = Math.min(...values).toFixed(1);
             document.getElementById('predOverLimit').textContent = overLimit;
             document.getElementById('predHours').textContent = predictions.length;
-            document.getElementById('confHigh').textContent = confHigh;
-            document.getElementById('confMedium').textContent = confMedium;
-            document.getElementById('confLow').textContent = confLow;
-
-            // Color the overLimit number
-            const overEl = document.getElementById('predOverLimit');
-            overEl.className = overLimit > 0
-                ? 'text-2xl font-bold text-red-600'
-                : 'text-2xl font-bold text-green-600';
-
+            document.getElementById('confHigh').textContent = predictions.filter(p => p.confidence === 'high').length;
+            document.getElementById('confMedium').textContent = predictions.filter(p => p.confidence === 'medium').length;
+            document.getElementById('confLow').textContent = predictions.filter(p => p.confidence === 'low').length;
+            document.getElementById('predOverLimit').className = overLimit > 0 ? 'text-2xl font-bold text-red-600' : 'text-2xl font-bold text-green-600';
             updatePredictionChart(predictions);
             renderPredictionTable(predictions);
         }
 
         function updatePredictionChart(predictions) {
-            const labels = predictions.map(p => {
-                const d = new Date(p.timestamp);
-                return isNaN(d)
-                    ? `H${p.hour}`
-                    : d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            });
-
-            // Split into confidence bands (null = gap in the line)
-            const highData   = predictions.map(p => p.confidence === 'high'   ? p.predicted_co2 : null);
-            const mediumData = predictions.map(p => p.confidence === 'medium' ? p.predicted_co2 : null);
-            const lowData    = predictions.map(p => p.confidence === 'low'    ? p.predicted_co2 : null);
-            const limitLine  = predictions.map(() => EMISSION_LIMIT);
-
+            const labels = predictions.map(p => { const d = new Date(p.timestamp); return isNaN(d) ? `H${p.hour}` : d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }); });
             predictionChart.data.labels = labels;
-            predictionChart.data.datasets[0].data = highData;
-            predictionChart.data.datasets[1].data = mediumData;
-            predictionChart.data.datasets[2].data = lowData;
-            predictionChart.data.datasets[3].data = limitLine;
+            predictionChart.data.datasets[0].data = predictions.map(p => p.confidence === 'high'   ? p.predicted_co2 : null);
+            predictionChart.data.datasets[1].data = predictions.map(p => p.confidence === 'medium' ? p.predicted_co2 : null);
+            predictionChart.data.datasets[2].data = predictions.map(p => p.confidence === 'low'    ? p.predicted_co2 : null);
+            predictionChart.data.datasets[3].data = predictions.map(() => EMISSION_LIMIT);
             predictionChart.update('none');
         }
 
         function renderPredictionTable(predictions) {
             const filter = document.getElementById('predTableFilter').value;
             let filtered = predictions;
-
             if (filter === 'high')   filtered = predictions.filter(p => p.confidence === 'high');
             if (filter === 'medium') filtered = predictions.filter(p => p.confidence === 'medium');
             if (filter === 'low')    filtered = predictions.filter(p => p.confidence === 'low');
             if (filter === 'alert')  filtered = predictions.filter(p => p.predicted_co2 > EMISSION_LIMIT);
-
             const tbody = document.getElementById('predictionTable');
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-400">No predictions match this filter.</td></tr>`;
-                return;
-            }
-
-            const confConfig = {
-                high:   { bg: 'bg-green-100 text-green-800',   dot: '🟢' },
-                medium: { bg: 'bg-yellow-100 text-yellow-800', dot: '🟡' },
-                low:    { bg: 'bg-red-100 text-red-800',       dot: '🔴' }
-            };
-
+            if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-400">No predictions match this filter.</td></tr>`; return; }
+            const confConfig = { high: { bg: 'bg-green-100 text-green-800', dot: '🟢' }, medium: { bg: 'bg-yellow-100 text-yellow-800', dot: '🟡' }, low: { bg: 'bg-red-100 text-red-800', dot: '🔴' } };
             tbody.innerHTML = filtered.map((p, i) => {
                 const isOver = p.predicted_co2 > EMISSION_LIMIT;
                 const isNear = !isOver && p.predicted_co2 >= EMISSION_LIMIT * 0.8;
                 const pct = ((p.predicted_co2 / EMISSION_LIMIT) * 100).toFixed(1);
                 const conf = confConfig[p.confidence] || confConfig.low;
-
                 const d = new Date(p.timestamp);
-                const timeStr = isNaN(d)
-                    ? (p.timestamp || `Hour ${p.hour}`)
-                    : d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
+                const timeStr = isNaN(d) ? (p.timestamp || `Hour ${p.hour}`) : d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                 const barColor = isOver ? 'bg-red-400' : isNear ? 'bg-yellow-400' : 'bg-violet-400';
-                const barWidth = Math.min(pct, 150);
-
-                return `
-                    <tr class="border-b hover:bg-violet-50 transition-colors">
-                        <td class="py-3 px-4 text-sm text-gray-400">${i + 1}</td>
-                        <td class="py-3 px-4 text-sm text-gray-900 whitespace-nowrap">${timeStr}</td>
-                        <td class="py-3 px-4 text-sm text-gray-600">${String(p.hour).padStart(2,'0')}:00</td>
-                        <td class="py-3 px-4">
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm font-bold ${isOver ? 'text-red-600' : 'text-gray-900'}">${p.predicted_co2.toFixed(2)}</span>
-                                <div class="flex-1 max-w-20 bg-gray-100 rounded-full h-1.5">
-                                    <div class="h-1.5 rounded-full ${barColor}" style="width:${Math.min(barWidth, 100)}%"></div>
-                                </div>
-                                <span class="text-xs text-gray-400">${pct}%</span>
-                            </div>
-                        </td>
-                        <td class="py-3 px-4 text-sm ${isOver ? 'text-red-600 font-medium' : 'text-green-600'}">
-                            ${isOver ? '+' : ''}${(p.predicted_co2 - EMISSION_LIMIT).toFixed(1)}
-                        </td>
-                        <td class="py-3 px-4">
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${conf.bg}">
-                                ${conf.dot} ${p.confidence.charAt(0).toUpperCase() + p.confidence.slice(1)}
-                            </span>
-                        </td>
-                        <td class="py-3 px-4">
-                            ${isOver
-                                ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">🚨 Over Limit</span>'
-                                : isNear
-                                    ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">⚠ Near Limit</span>'
-                                    : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">✓ Safe</span>'
-                            }
-                        </td>
-                    </tr>
-                `;
+                return `<tr class="border-b hover:bg-violet-50 transition-colors">
+                    <td class="py-3 px-4 text-sm text-gray-400">${i + 1}</td>
+                    <td class="py-3 px-4 text-sm text-gray-900 whitespace-nowrap">${timeStr}</td>
+                    <td class="py-3 px-4 text-sm text-gray-600">${String(p.hour).padStart(2,'0')}:00</td>
+                    <td class="py-3 px-4"><div class="flex items-center gap-2"><span class="text-sm font-bold ${isOver ? 'text-red-600' : 'text-gray-900'}">${p.predicted_co2.toFixed(2)}</span><div class="flex-1 max-w-20 bg-gray-100 rounded-full h-1.5"><div class="h-1.5 rounded-full ${barColor}" style="width:${Math.min(pct,100)}%"></div></div><span class="text-xs text-gray-400">${pct}%</span></div></td>
+                    <td class="py-3 px-4 text-sm ${isOver ? 'text-red-600 font-medium' : 'text-green-600'}">${isOver ? '+' : ''}${(p.predicted_co2 - EMISSION_LIMIT).toFixed(1)}</td>
+                    <td class="py-3 px-4"><span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${conf.bg}">${conf.dot} ${p.confidence.charAt(0).toUpperCase() + p.confidence.slice(1)}</span></td>
+                    <td class="py-3 px-4">${isOver ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">🚨 Over Limit</span>' : isNear ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">⚠ Near Limit</span>' : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">✓ Safe</span>'}</td>
+                </tr>`;
             }).join('');
-
             document.getElementById('predTableCount').textContent = filtered.length;
             document.getElementById('predTableInfo').classList.remove('hidden');
         }
 
-        function filterPredictionTable() {
-            if (allPredictionsData.length > 0) {
-                renderPredictionTable(allPredictionsData);
-            }
-        }
-
-        function refreshPredictions() {
-            setPredictionStatus('offline', 'Refreshing...');
-            fetchPredictions();
-        }
+        function filterPredictionTable() { if (allPredictionsData.length > 0) renderPredictionTable(allPredictionsData); }
+        function refreshPredictions() { setPredictionStatus('offline', 'Refreshing...'); fetchPredictions(); }
 
         function exportPredictions() {
-            if (allPredictionsData.length === 0) {
-                alert('No prediction data to export. Run predict_emissions.py first.');
-                return;
-            }
+            if (allPredictionsData.length === 0) { alert('No prediction data to export. Run predict_emissions.py first.'); return; }
             let csv = 'Timestamp,Hour,Day,Predicted CO2 (kg/hr),vs Limit,Confidence\n';
-            allPredictionsData.forEach(p => {
-                csv += `${p.timestamp},${p.hour},${p.day || ''},${p.predicted_co2.toFixed(2)},${(p.predicted_co2 - EMISSION_LIMIT).toFixed(2)},${p.confidence}\n`;
-            });
+            allPredictionsData.forEach(p => { csv += `${p.timestamp},${p.hour},${p.day || ''},${p.predicted_co2.toFixed(2)},${(p.predicted_co2 - EMISSION_LIMIT).toFixed(2)},${p.confidence}\n`; });
             const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `ai_forecast_${new Date().toISOString().slice(0,10)}.csv`;
-            a.click();
+            const a = document.createElement('a'); a.href = window.URL.createObjectURL(blob); a.download = `ai_forecast_${new Date().toISOString().slice(0,10)}.csv`; a.click();
         }
 
         // ==========================================
@@ -888,60 +742,41 @@
             const totalCreditsEarned = creditData.reduce((sum, day) => sum + day.creditsEarned, 0);
             const totalCreditsDeficit = creditData.reduce((sum, day) => sum + day.creditsDeficit, 0);
             const netCredits = totalCreditsEarned - totalCreditsDeficit;
-
             document.getElementById('totalEmissions').textContent = totalEmissions.toFixed(2);
             document.getElementById('creditsEarned').textContent = totalCreditsEarned.toFixed(2);
             document.getElementById('creditsDeficit').textContent = totalCreditsDeficit.toFixed(2);
             document.getElementById('netCredits').textContent = netCredits.toFixed(2);
-
             const emissionPercent = ((totalEmissions / MONTHLY_LIMIT) * 100).toFixed(1);
             document.getElementById('emissionPercent').textContent = emissionPercent;
             document.getElementById('emissionProgress').style.width = Math.min(emissionPercent, 100) + '%';
-            const progressBar = document.getElementById('emissionProgress');
-            progressBar.className = emissionPercent > 100 ? 'h-2 rounded-full bg-red-500'
-                : emissionPercent > 80 ? 'h-2 rounded-full bg-yellow-500' : 'h-2 rounded-full bg-blue-500';
-
+            document.getElementById('emissionProgress').className = emissionPercent > 100 ? 'h-2 rounded-full bg-red-500' : emissionPercent > 80 ? 'h-2 rounded-full bg-yellow-500' : 'h-2 rounded-full bg-blue-500';
             const netStatus = document.getElementById('netStatus');
             if (netCredits > 0) { netStatus.textContent = '✓ Surplus - Can sell credits'; netStatus.className = 'text-xs text-green-600 mt-2'; }
             else if (netCredits < 0) { netStatus.textContent = '⚠ Deficit - Must buy credits'; netStatus.className = 'text-xs text-red-600 mt-2'; }
             else { netStatus.textContent = '= Neutral - Break even'; netStatus.className = 'text-xs text-gray-600 mt-2'; }
-
             const now = new Date();
             const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
             document.getElementById('currentMonth').textContent = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
-
             const chartDates = creditData.slice(0, 10).reverse().map(d => d.date);
-            const earnedData = creditData.slice(0, 10).reverse().map(d => d.creditsEarned);
-            const deficitData = creditData.slice(0, 10).reverse().map(d => d.creditsDeficit);
             creditChart.data.labels = chartDates;
-            creditChart.data.datasets[0].data = earnedData;
-            creditChart.data.datasets[1].data = deficitData;
+            creditChart.data.datasets[0].data = creditData.slice(0, 10).reverse().map(d => d.creditsEarned);
+            creditChart.data.datasets[1].data = creditData.slice(0, 10).reverse().map(d => d.creditsDeficit);
             creditChart.update('none');
-
             updateCreditTable(creditData.slice(0, 15));
         }
 
         function updateCreditTable(creditData) {
-            const tbody = document.getElementById('creditTable');
-            tbody.innerHTML = creditData.map(day => {
+            document.getElementById('creditTable').innerHTML = creditData.map(day => {
                 const isDeficit = day.status === 'deficit';
-                const statusClass = isDeficit ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
-                const statusText = isDeficit ? '⚠ Deficit' : '✓ Earned';
                 const creditValue = isDeficit ? day.creditsDeficit : day.creditsEarned;
-                return `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="py-3 px-4 text-sm text-gray-900">${new Date(day.date).toLocaleDateString()}</td>
-                        <td class="py-3 px-4 text-sm font-medium text-gray-900">${day.totalEmission.toFixed(2)}</td>
-                        <td class="py-3 px-4 text-sm text-gray-600">${day.dailyLimit.toFixed(2)}</td>
-                        <td class="py-3 px-4 text-sm ${isDeficit ? 'text-red-600' : 'text-green-600'} font-medium">
-                            ${day.difference > 0 ? '+' : ''}${day.difference.toFixed(2)}
-                        </td>
-                        <td class="py-3 px-4 text-sm font-bold ${isDeficit ? 'text-red-700' : 'text-green-700'}">${creditValue.toFixed(2)} CC</td>
-                        <td class="py-3 px-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">${statusText}</span>
-                        </td>
-                    </tr>
-                `;
+                return `<tr class="border-b hover:bg-gray-50">
+                    <td class="py-3 px-4 text-sm text-gray-900">${new Date(day.date).toLocaleDateString()}</td>
+                    <td class="py-3 px-4 text-sm font-medium text-gray-900">${day.totalEmission.toFixed(2)}</td>
+                    <td class="py-3 px-4 text-sm text-gray-600">${day.dailyLimit.toFixed(2)}</td>
+                    <td class="py-3 px-4 text-sm ${isDeficit ? 'text-red-600' : 'text-green-600'} font-medium">${day.difference > 0 ? '+' : ''}${day.difference.toFixed(2)}</td>
+                    <td class="py-3 px-4 text-sm font-bold ${isDeficit ? 'text-red-700' : 'text-green-700'}">${creditValue.toFixed(2)} CC</td>
+                    <td class="py-3 px-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isDeficit ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${isDeficit ? '⚠ Deficit' : '✓ Earned'}</span></td>
+                </tr>`;
             }).join('');
         }
 
@@ -955,26 +790,16 @@
                 const emissions = await response.json();
                 allEmissionsData = emissions;
                 updateDashboard(emissions);
-                const creditData = calculateCarbonCredits(emissions);
-                updateCarbonCredits(creditData);
+                updateCarbonCredits(calculateCarbonCredits(emissions));
                 updateConnectionStatus(true);
             } catch (error) {
-                console.error('Fetch error:', error);
                 updateConnectionStatus(false, error.message);
             }
         }
 
         function updateDashboard(emissions) {
             if (!emissions || emissions.length === 0) {
-                document.getElementById('recordsTable').innerHTML = `
-                    <tr><td colspan="6" class="text-center py-8 text-gray-500">
-                        <div class="mb-2">⏳ No data yet. Waiting for Arduino data...</div>
-                        <div class="text-xs space-y-1">
-                            <div>✅ Make sure Arduino is connected via USB</div>
-                            <div>✅ Make sure you uploaded the Arduino code</div>
-                            <div>✅ Make sure serial-bridge.js is running</div>
-                        </div>
-                    </td></tr>`;
+                document.getElementById('recordsTable').innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500"><div class="mb-2">⏳ No data yet. Waiting for Arduino data...</div><div class="text-xs space-y-1"><div>✅ Make sure Arduino is connected via USB</div><div>✅ Make sure serial-bridge.js is running</div></div></td></tr>`;
                 return;
             }
             const latest = emissions[0];
@@ -983,46 +808,34 @@
             document.getElementById('currentHumidity').textContent = latest.humidity ? latest.humidity.toFixed(1) : '--';
             document.getElementById('totalRecords').textContent = emissions.length;
             document.getElementById('lastUpdate').textContent = new Date(latest.timestamp).toLocaleTimeString();
-
             const compliance = ((latest.co2_value / EMISSION_LIMIT) * 100).toFixed(1);
             document.getElementById('compliancePercent').textContent = compliance + '%';
             const bar = document.getElementById('complianceBar');
             bar.style.width = Math.min(compliance, 100) + '%';
             bar.className = `h-2 rounded-full ${compliance > 100 ? 'bg-red-500' : compliance > 80 ? 'bg-yellow-500' : 'bg-green-500'}`;
-
             updateAlertBanner(latest.co2_value);
-
             const co2Values = emissions.map(e => e.co2_value);
             document.getElementById('avgEmission').textContent = (co2Values.reduce((a, b) => a + b, 0) / co2Values.length).toFixed(1);
             document.getElementById('peakEmission').textContent = Math.max(...co2Values).toFixed(1);
-
             const chartData = emissions.slice(0, 20).reverse();
             emissionChart.data.labels = chartData.map(e => new Date(e.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
             emissionChart.data.datasets[0].data = chartData.map(e => e.co2_value);
             emissionChart.data.datasets[1].data = new Array(chartData.length).fill(EMISSION_LIMIT);
             emissionChart.update('none');
-
             updateTable(emissions.slice(0, 10));
         }
 
         function updateTable(emissions) {
-            const tbody = document.getElementById('recordsTable');
-            tbody.innerHTML = emissions.map(e => {
+            document.getElementById('recordsTable').innerHTML = emissions.map(e => {
                 const isOverLimit = e.co2_value > EMISSION_LIMIT;
-                const statusClass = isOverLimit ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
-                return `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="py-3 px-4 text-sm text-gray-900">${new Date(e.timestamp).toLocaleString()}</td>
-                        <td class="py-3 px-4 text-sm text-gray-900">${e.sensor_id}</td>
-                        <td class="py-3 px-4 text-sm font-medium text-gray-900">${e.co2_value.toFixed(2)}</td>
-                        <td class="py-3 px-4 text-sm text-gray-900">${e.temperature ? e.temperature.toFixed(1) : '--'}</td>
-                        <td class="py-3 px-4 text-sm text-gray-900">${e.humidity ? e.humidity.toFixed(1) : '--'}</td>
-                        <td class="py-3 px-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
-                                ${isOverLimit ? '⚠ Over Limit' : '✓ Normal'}
-                            </span>
-                        </td>
-                    </tr>`;
+                return `<tr class="border-b hover:bg-gray-50">
+                    <td class="py-3 px-4 text-sm text-gray-900">${new Date(e.timestamp).toLocaleString()}</td>
+                    <td class="py-3 px-4 text-sm text-gray-900">${e.sensor_id}</td>
+                    <td class="py-3 px-4 text-sm font-medium text-gray-900">${e.co2_value.toFixed(2)}</td>
+                    <td class="py-3 px-4 text-sm text-gray-900">${e.temperature ? e.temperature.toFixed(1) : '--'}</td>
+                    <td class="py-3 px-4 text-sm text-gray-900">${e.humidity ? e.humidity.toFixed(1) : '--'}</td>
+                    <td class="py-3 px-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isOverLimit ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${isOverLimit ? '⚠ Over Limit' : '✓ Normal'}</span></td>
+                </tr>`;
             }).join('');
         }
 
@@ -1033,14 +846,10 @@
             if (isNearLimit) {
                 banner.classList.remove('hidden');
                 banner.className = `mb-6 p-4 rounded-lg flex ${isOverLimit ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'}`;
-                const title = document.getElementById('alertTitle');
-                const message = document.getElementById('alertMessage');
-                title.className = `font-semibold ${isOverLimit ? 'text-red-900' : 'text-yellow-900'}`;
-                message.className = `text-sm ${isOverLimit ? 'text-red-700' : 'text-yellow-700'}`;
-                title.textContent = isOverLimit ? '🚨 EMISSION LIMIT EXCEEDED!' : '⚠️ WARNING: Approaching Limit';
-                message.textContent = isOverLimit
-                    ? `Current: ${co2Value.toFixed(1)} kg/h (Limit: ${EMISSION_LIMIT} kg/h). Immediate action required!`
-                    : `Current: ${co2Value.toFixed(1)} kg/h (${((co2Value/EMISSION_LIMIT)*100).toFixed(1)}% of limit)`;
+                document.getElementById('alertTitle').className = `font-semibold ${isOverLimit ? 'text-red-900' : 'text-yellow-900'}`;
+                document.getElementById('alertMessage').className = `text-sm ${isOverLimit ? 'text-red-700' : 'text-yellow-700'}`;
+                document.getElementById('alertTitle').textContent = isOverLimit ? '🚨 EMISSION LIMIT EXCEEDED!' : '⚠️ WARNING: Approaching Limit';
+                document.getElementById('alertMessage').textContent = isOverLimit ? `Current: ${co2Value.toFixed(1)} kg/h (Limit: ${EMISSION_LIMIT} kg/h). Immediate action required!` : `Current: ${co2Value.toFixed(1)} kg/h (${((co2Value/EMISSION_LIMIT)*100).toFixed(1)}% of limit)`;
             } else {
                 banner.classList.add('hidden');
             }
@@ -1053,58 +862,30 @@
                 status.innerHTML = `<div class="flex items-center gap-3"><div class="w-3 h-3 bg-green-500 rounded-full"></div><p class="text-green-900 font-semibold">✅ Connected - Receiving live data from Arduino</p></div>`;
             } else {
                 status.className = 'mb-6 p-4 rounded-lg bg-red-50 border border-red-200';
-                status.innerHTML = `
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                            <p class="text-red-900 font-semibold">❌ Connection Error: ${error || 'Cannot reach server'}</p>
-                        </div>
-                        <div class="text-sm text-red-700 pl-6">
-                            <div>Make sure:</div>
-                            <div>• Backend is running: <code class="bg-red-100 px-1 rounded">npm run dev</code> in Terminal 1</div>
-                            <div>• Serial bridge is running: <code class="bg-red-100 px-1 rounded">node serial-bridge.js</code> in Terminal 2</div>
-                            <div>• Arduino is connected via USB</div>
-                        </div>
-                    </div>`;
+                status.innerHTML = `<div class="flex flex-col gap-2"><div class="flex items-center gap-3"><div class="w-3 h-3 bg-red-500 rounded-full"></div><p class="text-red-900 font-semibold">❌ Connection Error: ${error || 'Cannot reach server'}</p></div><div class="text-sm text-red-700 pl-6"><div>Make sure:</div><div>• Backend is running: <code class="bg-red-100 px-1 rounded">npm run dev</code></div><div>• Serial bridge: <code class="bg-red-100 px-1 rounded">node serial-bridge.js</code></div><div>• Arduino is connected via USB</div></div></div>`;
             }
         }
 
-        function refreshData() {
-            fetchEmissions();
-        }
+        function refreshData() { fetchEmissions(); }
 
         function exportData() {
             if (allEmissionsData.length === 0) { alert('No data to export'); return; }
             let csv = 'Timestamp,Sensor ID,CO2 (kg/h),Temperature (°C),Humidity (%)\n';
-            allEmissionsData.forEach(e => {
-                csv += `${e.timestamp},${e.sensor_id},${e.co2_value},${e.temperature || ''},${e.humidity || ''}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `emissions_${new Date().toISOString().slice(0,10)}.csv`;
-            a.click();
+            allEmissionsData.forEach(e => { csv += `${e.timestamp},${e.sensor_id},${e.co2_value},${e.temperature || ''},${e.humidity || ''}\n`; });
+            const a = document.createElement('a'); a.href = window.URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `emissions_${new Date().toISOString().slice(0,10)}.csv`; a.click();
         }
 
         function exportCreditData() {
             if (dailyCreditData.length === 0) { alert('No credit data to export'); return; }
             let csv = 'Date,Total Emissions (kg),Daily Limit (kg),Difference (kg),Credits Earned (CC),Credits Deficit (CC),Status\n';
-            dailyCreditData.forEach(d => {
-                csv += `${d.date},${d.totalEmission.toFixed(2)},${d.dailyLimit.toFixed(2)},${d.difference.toFixed(2)},${d.creditsEarned.toFixed(2)},${d.creditsDeficit.toFixed(2)},${d.status}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `carbon_credits_${new Date().toISOString().slice(0,10)}.csv`;
-            a.click();
+            dailyCreditData.forEach(d => { csv += `${d.date},${d.totalEmission.toFixed(2)},${d.dailyLimit.toFixed(2)},${d.difference.toFixed(2)},${d.creditsEarned.toFixed(2)},${d.creditsDeficit.toFixed(2)},${d.status}\n`; });
+            const a = document.createElement('a'); a.href = window.URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `carbon_credits_${new Date().toISOString().slice(0,10)}.csv`; a.click();
         }
 
         // ==========================================
         // INITIALIZE
         // ==========================================
-        console.log('🌱 Carbon Dashboard initializing...');
+        initUserDisplay();
         initializeChart();
         initializeCreditChart();
         initializePredictionChart();
@@ -1113,10 +894,8 @@
 
         setInterval(fetchEmissions, REFRESH_INTERVAL);
         setInterval(fetchPredictions, PREDICTION_REFRESH_INTERVAL);
-
-        console.log('✅ Dashboard initialized with AI Predictions support');
-        console.log('📡 Emissions refresh every', REFRESH_INTERVAL / 1000, 'seconds');
-        console.log('🔮 Predictions refresh every', PREDICTION_REFRESH_INTERVAL / 1000, 'seconds');
+        // Re-check token every 5 minutes
+        setInterval(initUserDisplay, 300000);
     </script>
 </body>
 </html>

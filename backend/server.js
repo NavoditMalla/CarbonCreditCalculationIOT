@@ -139,6 +139,46 @@ app.get('/api/auth/verify', authenticateToken, (req, res) => {
     res.json({ valid: true, user: req.user });
 });
 
+// Refresh token — issues a new 24h token if the current one is still valid
+app.post('/api/auth/refresh', authenticateToken, async (req, res) => {
+    try {
+        // Look up fresh user data from DB (role may have changed)
+        const [users] = await pool.query(
+            'SELECT user_id, name, email, role FROM User WHERE user_id = ?',
+            [req.user.user_id]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const user = users[0];
+
+        // Issue a fresh token
+        const newToken = jwt.sign(
+            { user_id: user.user_id, email: user.email, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        console.log(`🔄 Token refreshed for user: ${user.email}`);
+
+        res.json({
+            message: 'Token refreshed successfully',
+            token: newToken,
+            user: {
+                user_id: user.user_id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error('Token refresh error:', error);
+        res.status(500).json({ error: 'Failed to refresh token' });
+    }
+});
+
 // ==========================================
 // ROUTES - EMISSIONS
 // ==========================================

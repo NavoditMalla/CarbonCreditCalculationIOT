@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Out — Carbon Emission Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Header — identical to dashboard -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Carbon Emission Monitor</h1>
+                    <p class="text-sm text-gray-500">Real-time Arduino Data Dashboard</p>
+                </div>
+            </div>
+            <!-- User badge -->
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full">
+                    <div id="userAvatar" class="w-7 h-7 bg-green-600 rounded-full flex items-center justify-center text-white text-xs font-bold">?</div>
+                    <span id="userName" class="text-sm font-medium text-gray-900">Loading...</span>
+                    <span id="userRole" class="text-xs text-gray-400 uppercase tracking-wide"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+
+        <!-- Status bar -->
+        <div id="statusBar" class="mb-6 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <p class="text-yellow-900 font-semibold">You are about to sign out of the monitoring dashboard</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+            <!-- Left: session info cards -->
+            <div class="lg:col-span-2 flex flex-col gap-4">
+
+                <!-- Session info — same card style as dashboard KPIs -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-4">Current Session</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-500">Signed in as</span>
+                            <span id="sessionName" class="text-sm font-medium text-gray-900">--</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-500">Email</span>
+                            <span id="sessionEmail" class="text-sm font-medium text-gray-900">--</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-500">Role</span>
+                            <span id="sessionRole" class="text-xs font-semibold uppercase tracking-wide px-2 py-1 bg-green-100 text-green-700 rounded-full">--</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-500">Token status</span>
+                            <span id="tokenStatus" class="text-xs font-semibold uppercase tracking-wide px-2 py-1 bg-blue-100 text-blue-700 rounded-full">Checking...</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2">
+                            <span class="text-sm text-gray-500">Token expires</span>
+                            <span id="tokenExpiry" class="text-sm font-medium text-gray-900">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- What happens on sign out -->
+                <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <h4 class="font-semibold text-blue-900 mb-2">What happens when you sign out:</h4>
+                    <div class="text-sm text-blue-800 space-y-2">
+                        <p>• Your session token is cleared from the browser</p>
+                        <p>• You will be redirected to the login page</p>
+                        <p>• Live sensor data continues to be collected</p>
+                        <p>• Your account and all data remain intact</p>
+                    </div>
+                </div>
+
+                <!-- Stats still running -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white p-5 rounded-lg shadow-sm border">
+                        <p class="text-sm text-gray-500 mb-1">Data Collection</p>
+                        <p class="text-2xl font-bold text-green-600">Active</p>
+                        <div class="mt-1 flex items-center gap-1.5">
+                            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                            <span class="text-xs text-gray-400">Continues after sign out</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm border">
+                        <p class="text-sm text-gray-500 mb-1">Your data</p>
+                        <p class="text-2xl font-bold text-gray-900">Safe</p>
+                        <p class="text-xs text-gray-400 mt-1">Stored in database</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: sign out confirmation card -->
+            <div class="lg:col-span-3">
+                <div class="bg-white rounded-lg shadow-sm border p-8">
+
+                    <div class="flex items-center gap-3 pb-5 mb-6 border-b border-gray-100">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Sign Out</h2>
+                            <p class="text-sm text-gray-500">Confirm you want to end your session</p>
+                        </div>
+                    </div>
+
+                    <!-- Signed-out success state (hidden initially) -->
+                    <div id="signedOutState" class="hidden text-center py-8">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">Signed out successfully</h3>
+                        <p class="text-sm text-gray-500 mb-6">Your session has been cleared. Redirecting to login…</p>
+                        <div class="w-full bg-gray-200 rounded-full h-1.5 mb-4">
+                            <div id="redirectBar" class="h-1.5 rounded-full bg-green-500 transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                        <a href="login.html" class="text-sm text-green-600 font-medium hover:underline">Click here if not redirected →</a>
+                    </div>
+
+                    <!-- Confirm state -->
+                    <div id="confirmState">
+                        <div class="bg-gray-50 rounded-lg border border-gray-200 p-5 mb-6">
+                            <p class="text-sm text-gray-700 mb-3">Signing out will end your current session. You'll need to sign in again to access the dashboard.</p>
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                <span class="text-xs text-gray-500">The Arduino sensor and data collection will keep running in the background.</span>
+                            </div>
+                        </div>
+
+                        <!-- Token refresh option -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-blue-900 mb-1">Want to stay logged in instead?</p>
+                                    <p class="text-xs text-blue-700 mb-3">Refresh your session token to extend your login by another 24 hours without signing out.</p>
+                                    <button onclick="refreshToken()" id="refreshBtn"
+                                        class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium transition-colors">
+                                        🔄 Refresh My Session Token
+                                    </button>
+                                    <p id="refreshMsg" class="text-xs text-blue-700 mt-2 hidden"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action buttons -->
+                        <div class="flex gap-3">
+                            <button onclick="confirmSignOut()" id="signOutBtn"
+                                class="flex-1 bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-sm text-sm">
+                                Yes, Sign Me Out
+                            </button>
+                            <a href="dashboard.html"
+                                class="flex-1 bg-white text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-sm text-sm border border-gray-300 text-center">
+                                Cancel — Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Info strip -->
+                <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-4">
+                    <div class="flex items-center gap-3 text-sm text-blue-800">
+                        <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p>Session tokens last <strong>24 hours</strong>. Use the refresh button above to extend your session without signing out.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+
+        // ---- Load user info ----
+        function loadUserInfo() {
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const token = localStorage.getItem('authToken');
+
+                if (!token) {
+                    // Already signed out — go to login
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Display name/role in header
+                if (user.name) {
+                    document.getElementById('userName').textContent = user.name;
+                    document.getElementById('userRole').textContent = user.role || '';
+                    document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+                }
+
+                // Session card details
+                document.getElementById('sessionName').textContent = user.name || '--';
+                document.getElementById('sessionEmail').textContent = user.email || '--';
+                document.getElementById('sessionRole').textContent = user.role || '--';
+
+                // Decode JWT expiry (no library needed — just parse the payload)
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    const expDate = new Date(payload.exp * 1000);
+                    const now = new Date();
+                    const hoursLeft = Math.round((expDate - now) / 3600000);
+
+                    document.getElementById('tokenExpiry').textContent =
+                        expDate.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                    if (hoursLeft <= 0) {
+                        document.getElementById('tokenStatus').textContent = 'Expired';
+                        document.getElementById('tokenStatus').className = 'text-xs font-semibold uppercase tracking-wide px-2 py-1 bg-red-100 text-red-700 rounded-full';
+                    } else if (hoursLeft <= 2) {
+                        document.getElementById('tokenStatus').textContent = `Expires in ${hoursLeft}h`;
+                        document.getElementById('tokenStatus').className = 'text-xs font-semibold uppercase tracking-wide px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full';
+                    } else {
+                        document.getElementById('tokenStatus').textContent = `Valid · ${hoursLeft}h left`;
+                        document.getElementById('tokenStatus').className = 'text-xs font-semibold uppercase tracking-wide px-2 py-1 bg-green-100 text-green-700 rounded-full';
+                    }
+                } catch (e) {
+                    document.getElementById('tokenStatus').textContent = 'Unknown';
+                    document.getElementById('tokenExpiry').textContent = '--';
+                }
+
+            } catch (e) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        // ---- Refresh token ----
+        async function refreshToken() {
+            const btn = document.getElementById('refreshBtn');
+            const msg = document.getElementById('refreshMsg');
+            const token = localStorage.getItem('authToken');
+
+            btn.disabled = true;
+            btn.textContent = 'Refreshing...';
+            msg.classList.add('hidden');
+
+            try {
+                const res = await fetch(`${API_URL}/auth/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('authToken', data.token);
+
+                    msg.textContent = '✅ Session refreshed! Your token is valid for another 24 hours.';
+                    msg.className = 'text-xs text-green-700 mt-2';
+                    msg.classList.remove('hidden');
+                    btn.textContent = '✅ Token Refreshed';
+                    btn.className = 'px-4 py-2 bg-green-600 text-white text-sm rounded-lg font-medium';
+
+                    // Re-read the expiry
+                    loadUserInfo();
+                } else {
+                    // Server doesn't have a refresh endpoint yet — extend locally
+                    msg.textContent = '⚠ Server refresh not available. Sign out and sign in again to get a fresh token.';
+                    msg.className = 'text-xs text-yellow-700 mt-2';
+                    msg.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.textContent = '🔄 Refresh My Session Token';
+                }
+            } catch (err) {
+                // Offline fallback — just tell the user
+                msg.textContent = '❌ Could not reach server. Make sure the backend is running on port 3000.';
+                msg.className = 'text-xs text-red-700 mt-2';
+                msg.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = '🔄 Refresh My Session Token';
+            }
+        }
+
+        // ---- Sign out ----
+        function confirmSignOut() {
+            const btn = document.getElementById('signOutBtn');
+            btn.disabled = true;
+            btn.textContent = 'Signing out…';
+
+            // Clear all auth data
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('authToken');
+            sessionStorage.removeItem('user');
+
+            // Show success state
+            document.getElementById('confirmState').classList.add('hidden');
+            document.getElementById('signedOutState').classList.remove('hidden');
+
+            // Update status bar
+            const sb = document.getElementById('statusBar');
+            sb.className = 'mb-6 p-4 rounded-lg bg-green-50 border border-green-200';
+            sb.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <p class="text-green-900 font-semibold">✅ Signed out successfully — redirecting to login...</p>
+                </div>`;
+
+            // Animate redirect progress bar
+            let progress = 0;
+            const bar = document.getElementById('redirectBar');
+            const interval = setInterval(() => {
+                progress += 4;
+                bar.style.width = progress + '%';
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    window.location.href = 'login.html';
+                }
+            }, 100); // 100ms × 25 steps = ~2.5s
+        }
+
+        loadUserInfo();
+    </script>
+</body>
+</html>
