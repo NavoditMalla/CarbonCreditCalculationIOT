@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings — Carbon Emission Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        (function() {
+            if (!localStorage.getItem('authToken')) { window.location.href = 'login.html'; return; }
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (user.role !== 'admin') {
+                    // Not admin — show access denied, redirect back
+                    document.addEventListener('DOMContentLoaded', function() {
+                        document.body.innerHTML = `
+                        <div class="bg-gray-50 min-h-screen flex items-center justify-center">
+                            <div class="bg-white rounded-lg shadow-sm border p-10 max-w-md text-center">
+                                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                </div>
+                                <h2 class="text-xl font-bold text-gray-900 mb-2">Access Denied</h2>
+                                <p class="text-gray-500 text-sm mb-6">The Settings page is only accessible to Admins. Contact your administrator to request access.</p>
+                                <a href="dashboard.html" class="px-6 py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 text-sm">← Back to Dashboard</a>
+                            </div>
+                        </div>`;
+                    });
+                }
+            } catch(e) { window.location.href = 'login.html'; }
+        })();
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Header — identical to dashboard -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Carbon Emission Monitor</h1>
+                    <p class="text-sm text-gray-500">Real-time Arduino Data Dashboard</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full">
+                    <div id="userAvatar" class="w-7 h-7 bg-green-600 rounded-full flex items-center justify-center text-white text-xs font-bold">?</div>
+                    <span id="userName" class="text-sm font-medium text-gray-900">Loading...</span>
+                    <span id="userRole" class="text-xs text-gray-400 uppercase tracking-wide"></span>
+                </div>
+                <a href="dashboard.html" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+                    ← Back to Dashboard
+                </a>
+                <a href="signout.html" class="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-700 border border-gray-200 transition-colors text-sm font-medium">
+                    Sign Out
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+
+        <!-- Page header -->
+        <div class="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200">
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <p class="text-blue-900 font-semibold">Dashboard Settings — changes apply immediately and are saved in your browser</p>
+            </div>
+        </div>
+
+        <!-- Save banner (hidden) -->
+        <div id="saveBanner" class="hidden mb-6 p-4 rounded-lg bg-green-50 border border-green-200">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <p class="text-green-900 font-semibold">✅ Settings saved successfully</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Left: navigation / summary -->
+            <div class="lg:col-span-1 flex flex-col gap-4">
+
+                <!-- Current values summary -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-4">Current Active Settings</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-500">Emission Limit</span>
+                            <span id="summary_emissionLimit" class="text-sm font-bold text-red-600">-- kg/hr</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-500">Monthly CO₂ Limit</span>
+                            <span id="summary_monthlyLimit" class="text-sm font-bold text-blue-600">-- kg</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-500">Daily CO₂ Limit</span>
+                            <span id="summary_dailyLimit" class="text-sm font-bold text-green-600">-- kg</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-500">Emission Chart Min</span>
+                            <span id="summary_chartMin" class="text-sm font-bold text-gray-700">-- kg/hr</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-500">Emission Chart Max</span>
+                            <span id="summary_chartMax" class="text-sm font-bold text-gray-700">-- kg/hr</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-500">Prediction Chart Min</span>
+                            <span id="summary_predMin" class="text-sm font-bold text-gray-700">-- kg/hr</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2">
+                            <span class="text-sm text-gray-500">Prediction Chart Max</span>
+                            <span id="summary_predMax" class="text-sm font-bold text-gray-700">-- kg/hr</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info box -->
+                <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <h4 class="font-semibold text-blue-900 mb-2">How Settings Work</h4>
+                    <div class="text-sm text-blue-800 space-y-1">
+                        <p>• Settings are saved in your browser's localStorage</p>
+                        <p>• They apply immediately when you return to the dashboard</p>
+                        <p>• Each user/device has their own settings</p>
+                        <p>• Use "Reset to Defaults" to restore original values</p>
+                    </div>
+                </div>
+
+                <!-- Reset button -->
+                <button onclick="resetToDefaults()"
+                    class="w-full px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-colors text-sm font-medium">
+                    🔄 Reset All to Defaults
+                </button>
+            </div>
+
+            <!-- Right: settings forms -->
+            <div class="lg:col-span-2 flex flex-col gap-6">
+
+                <!-- ===== EMISSION LIMITS ===== -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="flex items-center gap-3 pb-4 mb-5 border-b border-gray-100">
+                        <div class="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">Carbon Credit Limits</h2>
+                            <p class="text-sm text-gray-500">Controls the compliance threshold and credit calculations</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <!-- Emission limit per hour -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Emission Alert Limit <span class="text-gray-400 font-normal">(kg CO₂/hr)</span></label>
+                            <p class="text-xs text-gray-400 mb-2">Dashboard shows ⚠️ warning when current reading exceeds this</p>
+                            <input type="number" id="input_emissionLimit" min="0" step="10"
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                placeholder="1000" oninput="livePreview()"/>
+                        </div>
+
+                        <!-- Monthly limit -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Monthly CO₂ Limit <span class="text-gray-400 font-normal">(kg)</span></label>
+                            <p class="text-xs text-gray-400 mb-2">Total CO₂ allowed per month — used for credit calculation</p>
+                            <input type="number" id="input_monthlyLimit" min="0" step="100"
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                placeholder="10000" oninput="livePreview()"/>
+                        </div>
+                    </div>
+
+                    <!-- Derived daily limit display -->
+                    <div class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Derived Daily Limit <span class="text-xs text-gray-400">(Monthly ÷ 30)</span></span>
+                            <span id="derivedDaily" class="text-sm font-bold text-green-700">333.33 kg/day</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">This is calculated automatically — you don't need to set it separately</p>
+                    </div>
+
+                    <!-- Near-limit warning threshold -->
+                    <div class="mt-5">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Warning Threshold <span class="text-gray-400 font-normal">(%)</span></label>
+                        <p class="text-xs text-gray-400 mb-2">Show yellow warning when emission reaches this % of the alert limit</p>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="input_warningThreshold" min="50" max="99" step="1"
+                                class="flex-1" oninput="updateWarningLabel(this.value); livePreview()"/>
+                            <span id="warningLabel" class="text-sm font-bold text-yellow-700 min-w-12 text-right">80%</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">
+                            At current limit of <span id="warningExample" class="font-medium">1000</span> kg/hr,
+                            warning fires at <span id="warningAt" class="font-medium text-yellow-700">800</span> kg/hr
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ===== REAL-TIME CHART RANGE ===== -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="flex items-center gap-3 pb-4 mb-5 border-b border-gray-100">
+                        <div class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">Real-Time Emission Chart Range</h2>
+                            <p class="text-sm text-gray-500">Y-axis min/max for the live CO₂ monitoring graph</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Y-Axis Minimum <span class="text-gray-400 font-normal">(kg/hr)</span></label>
+                            <p class="text-xs text-gray-400 mb-2">Set to 0 to always start from zero, or a higher value to zoom in</p>
+                            <input type="number" id="input_chartMin" min="0" step="0.01"
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                placeholder="0"/>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Y-Axis Maximum <span class="text-gray-400 font-normal">(kg/hr)</span></label>
+                            <p class="text-xs text-gray-400 mb-2">Leave blank to auto-scale, or set a fixed ceiling</p>
+                            <input type="number" id="input_chartMax" min="0" step="0.1"
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                placeholder="Auto"/>
+                        </div>
+                    </div>
+
+                    <!-- Quick presets for emission chart -->
+                    <div>
+                        <p class="text-xs text-gray-500 mb-2 font-medium">Quick presets:</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="setChartPreset('emission', 0, '')"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-green-100 hover:text-green-800 text-gray-700 rounded-lg border border-gray-200 hover:border-green-300 transition-colors">
+                                Auto scale
+                            </button>
+                            <button onclick="setChartPreset('emission', 0, 2)"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-green-100 hover:text-green-800 text-gray-700 rounded-lg border border-gray-200 hover:border-green-300 transition-colors">
+                                0 – 2 kg/hr
+                            </button>
+                            <button onclick="setChartPreset('emission', 0, 5)"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-green-100 hover:text-green-800 text-gray-700 rounded-lg border border-gray-200 hover:border-green-300 transition-colors">
+                                0 – 5 kg/hr
+                            </button>
+                            <button onclick="setChartPreset('emission', 0, 10)"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-green-100 hover:text-green-800 text-gray-700 rounded-lg border border-gray-200 hover:border-green-300 transition-colors">
+                                0 – 10 kg/hr
+                            </button>
+                            <button onclick="setChartPreset('emission', 0, 100)"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-green-100 hover:text-green-800 text-gray-700 rounded-lg border border-gray-200 hover:border-green-300 transition-colors">
+                                0 – 100 kg/hr
+                            </button>
+                            <button onclick="setChartPreset('emission', 0, 1000)"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-green-100 hover:text-green-800 text-gray-700 rounded-lg border border-gray-200 hover:border-green-300 transition-colors">
+                                0 – 1000 kg/hr
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== PREDICTION CHART RANGE ===== -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="flex items-center gap-3 pb-4 mb-5 border-b border-gray-100">
+                        <div class="w-9 h-9 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">AI Prediction Chart Range</h2>
+                            <p class="text-sm text-gray-500">Y-axis min/max for the 24-hour forecast graph</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Y-Axis Minimum <span class="text-gray-400 font-normal">(kg/hr)</span></label>
+                            <p class="text-xs text-gray-400 mb-2">Lower bound of the prediction chart</p>
+                            <input type="number" id="input_predMin" min="0" step="0.01"
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                placeholder="0"/>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Y-Axis Maximum <span class="text-gray-400 font-normal">(kg/hr)</span></label>
+                            <p class="text-xs text-gray-400 mb-2">Leave blank to auto-scale</p>
+                            <input type="number" id="input_predMax" min="0" step="0.1"
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                placeholder="Auto"/>
+                        </div>
+                    </div>
+
+                    <!-- Quick presets for prediction chart -->
+                    <div>
+                        <p class="text-xs text-gray-500 mb-2 font-medium">Quick presets:</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="setChartPreset('pred', 0, '')"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-violet-100 hover:text-violet-800 text-gray-700 rounded-lg border border-gray-200 hover:border-violet-300 transition-colors">
+                                Auto scale
+                            </button>
+                            <button onclick="setChartPreset('pred', 0, 2)"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-violet-100 hover:text-violet-800 text-gray-700 rounded-lg border border-gray-200 hover:border-violet-300 transition-colors">
+                                0 – 2 kg/hr
+                            </button>
+                            <button onclick="setChartPreset('pred', 0, 5)"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-violet-100 hover:text-violet-800 text-gray-700 rounded-lg border border-gray-200 hover:border-violet-300 transition-colors">
+                                0 – 5 kg/hr
+                            </button>
+                            <button onclick="setChartPreset('pred', 0, 10)"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-violet-100 hover:text-violet-800 text-gray-700 rounded-lg border border-gray-200 hover:border-violet-300 transition-colors">
+                                0 – 10 kg/hr
+                            </button>
+                            <button onclick="setChartPreset('pred', 0, 100)"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-violet-100 hover:text-violet-800 text-gray-700 rounded-lg border border-gray-200 hover:border-violet-300 transition-colors">
+                                0 – 100 kg/hr
+                            </button>
+                            <button onclick="setChartPreset('pred', 0, 1000)"
+                                class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-violet-100 hover:text-violet-800 text-gray-700 rounded-lg border border-gray-200 hover:border-violet-300 transition-colors">
+                                0 – 1000 kg/hr
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== DISPLAY SETTINGS ===== -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="flex items-center gap-3 pb-4 mb-5 border-b border-gray-100">
+                        <div class="w-9 h-9 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">Display Settings</h2>
+                            <p class="text-sm text-gray-500">Control how much data appears in charts and tables</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Chart Data Points</label>
+                            <p class="text-xs text-gray-400 mb-2">Number of readings shown in the real-time emission chart</p>
+                            <select id="input_chartPoints"
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm bg-white">
+                                <option value="10">10 points</option>
+                                <option value="20" selected>20 points</option>
+                                <option value="50">50 points</option>
+                                <option value="100">100 points</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Table Rows</label>
+                            <p class="text-xs text-gray-400 mb-2">Number of recent records shown in the emission table</p>
+                            <select id="input_tableRows"
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm bg-white">
+                                <option value="5">5 rows</option>
+                                <option value="10" selected>10 rows</option>
+                                <option value="25">25 rows</option>
+                                <option value="50">50 rows</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Refresh Interval</label>
+                            <p class="text-xs text-gray-400 mb-2">How often the dashboard fetches new data</p>
+                            <select id="input_refreshInterval"
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm bg-white">
+                                <option value="2000">2 seconds</option>
+                                <option value="5000" selected>5 seconds</option>
+                                <option value="10000">10 seconds</option>
+                                <option value="30000">30 seconds</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Airflow Rate <span class="text-gray-400 font-normal">(m³/hr)</span></label>
+                            <p class="text-xs text-gray-400 mb-2">Used to convert sensor ppm → kg/hr (update Arduino code too)</p>
+                            <input type="number" id="input_airflow" min="1" step="10"
+                                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                placeholder="500"/>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ===== USER MANAGEMENT (Admin only) ===== -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="flex items-center gap-3 pb-4 mb-5 border-b border-gray-100">
+                        <div class="w-9 h-9 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">User Management</h2>
+                            <p class="text-sm text-gray-500">Manage roles and access for all registered users</p>
+                        </div>
+                        <button onclick="loadUsers()" class="ml-auto px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg border border-gray-200 font-medium transition-colors">
+                            🔄 Refresh
+                        </button>
+                    </div>
+
+                    <!-- Role legend -->
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full border border-gray-200 font-medium">
+                            <span class="w-2 h-2 rounded-full bg-gray-400"></span> User — view only
+                        </span>
+                        <span class="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-green-100 text-green-800 rounded-full border border-green-200 font-medium">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span> Operator — sensor management
+                        </span>
+                        <span class="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full border border-blue-200 font-medium">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span> Admin — full access + settings
+                        </span>
+                    </div>
+
+                    <!-- Users table -->
+                    <div id="userMgmtStatus" class="hidden mb-3 p-3 rounded-lg text-sm font-medium"></div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b bg-gray-50">
+                                    <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">User</th>
+                                    <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Email</th>
+                                    <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Current Role</th>
+                                    <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Joined</th>
+                                    <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Change Role</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr><td colspan="5" class="text-center py-8 text-gray-400 text-sm">Loading users...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Save button -->
+                <button onclick="saveSettings()"
+                    class="w-full bg-green-600 text-white py-3.5 rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-sm text-sm">
+                    💾 Save All Settings
+                </button>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // DEFAULT SETTINGS
+        // ==========================================
+        const DEFAULTS = {
+            emissionLimit:     1000,
+            monthlyLimit:      10000,
+            warningThreshold:  80,
+            chartMin:          '',
+            chartMax:          '',
+            predMin:           '',
+            predMax:           '',
+            chartPoints:       20,
+            tableRows:         10,
+            refreshInterval:   5000,
+            airflow:           500
+        };
+
+        // ==========================================
+        // LOAD SETTINGS FROM LOCALSTORAGE
+        // ==========================================
+        function loadSettings() {
+            const saved = JSON.parse(localStorage.getItem('dashboardSettings') || '{}');
+            const s = { ...DEFAULTS, ...saved };
+
+            document.getElementById('input_emissionLimit').value    = s.emissionLimit;
+            document.getElementById('input_monthlyLimit').value     = s.monthlyLimit;
+            document.getElementById('input_warningThreshold').value = s.warningThreshold;
+            document.getElementById('input_chartMin').value         = s.chartMin;
+            document.getElementById('input_chartMax').value         = s.chartMax;
+            document.getElementById('input_predMin').value          = s.predMin;
+            document.getElementById('input_predMax').value          = s.predMax;
+            document.getElementById('input_chartPoints').value      = s.chartPoints;
+            document.getElementById('input_tableRows').value        = s.tableRows;
+            document.getElementById('input_refreshInterval').value  = s.refreshInterval;
+            document.getElementById('input_airflow').value          = s.airflow;
+
+            updateWarningLabel(s.warningThreshold);
+            livePreview();
+        }
+
+        // ==========================================
+        // SAVE SETTINGS
+        // ==========================================
+        function saveSettings() {
+            const emissionLimit    = parseFloat(document.getElementById('input_emissionLimit').value)    || DEFAULTS.emissionLimit;
+            const monthlyLimit     = parseFloat(document.getElementById('input_monthlyLimit').value)     || DEFAULTS.monthlyLimit;
+            const warningThreshold = parseInt(document.getElementById('input_warningThreshold').value)   || DEFAULTS.warningThreshold;
+            const chartMinRaw      = document.getElementById('input_chartMin').value.trim();
+            const chartMaxRaw      = document.getElementById('input_chartMax').value.trim();
+            const predMinRaw       = document.getElementById('input_predMin').value.trim();
+            const predMaxRaw       = document.getElementById('input_predMax').value.trim();
+            const chartPoints      = parseInt(document.getElementById('input_chartPoints').value)        || DEFAULTS.chartPoints;
+            const tableRows        = parseInt(document.getElementById('input_tableRows').value)          || DEFAULTS.tableRows;
+            const refreshInterval  = parseInt(document.getElementById('input_refreshInterval').value)    || DEFAULTS.refreshInterval;
+            const airflow          = parseFloat(document.getElementById('input_airflow').value)          || DEFAULTS.airflow;
+
+            const settings = {
+                emissionLimit,
+                monthlyLimit,
+                warningThreshold,
+                chartMin:  chartMinRaw  === '' ? '' : parseFloat(chartMinRaw),
+                chartMax:  chartMaxRaw  === '' ? '' : parseFloat(chartMaxRaw),
+                predMin:   predMinRaw   === '' ? '' : parseFloat(predMinRaw),
+                predMax:   predMaxRaw   === '' ? '' : parseFloat(predMaxRaw),
+                chartPoints,
+                tableRows,
+                refreshInterval,
+                airflow
+            };
+
+            localStorage.setItem('dashboardSettings', JSON.stringify(settings));
+
+            // Show save banner
+            const banner = document.getElementById('saveBanner');
+            banner.classList.remove('hidden');
+            setTimeout(() => banner.classList.add('hidden'), 3000);
+
+            livePreview();
+        }
+
+        // ==========================================
+        // RESET TO DEFAULTS
+        // ==========================================
+        function resetToDefaults() {
+            if (!confirm('Reset all settings to defaults?')) return;
+            localStorage.removeItem('dashboardSettings');
+            loadSettings();
+            const banner = document.getElementById('saveBanner');
+            banner.querySelector('p').textContent = '🔄 Settings reset to defaults';
+            banner.classList.remove('hidden');
+            setTimeout(() => {
+                banner.classList.add('hidden');
+                banner.querySelector('p').textContent = '✅ Settings saved successfully';
+            }, 2500);
+        }
+
+        // ==========================================
+        // LIVE PREVIEW — updates summary panel
+        // ==========================================
+        function livePreview() {
+            const emissionLimit   = parseFloat(document.getElementById('input_emissionLimit').value) || 1000;
+            const monthlyLimit    = parseFloat(document.getElementById('input_monthlyLimit').value)  || 10000;
+            const warningPct      = parseInt(document.getElementById('input_warningThreshold').value) || 80;
+            const chartMin        = document.getElementById('input_chartMin').value.trim();
+            const chartMax        = document.getElementById('input_chartMax').value.trim();
+            const predMin         = document.getElementById('input_predMin').value.trim();
+            const predMax         = document.getElementById('input_predMax').value.trim();
+
+            document.getElementById('summary_emissionLimit').textContent = emissionLimit + ' kg/hr';
+            document.getElementById('summary_monthlyLimit').textContent  = monthlyLimit.toLocaleString() + ' kg';
+            document.getElementById('summary_dailyLimit').textContent    = (monthlyLimit / 30).toFixed(2) + ' kg/day';
+            document.getElementById('summary_chartMin').textContent      = chartMin === '' ? 'Auto' : chartMin + ' kg/hr';
+            document.getElementById('summary_chartMax').textContent      = chartMax === '' ? 'Auto' : chartMax + ' kg/hr';
+            document.getElementById('summary_predMin').textContent       = predMin  === '' ? 'Auto' : predMin  + ' kg/hr';
+            document.getElementById('summary_predMax').textContent       = predMax  === '' ? 'Auto' : predMax  + ' kg/hr';
+
+            document.getElementById('derivedDaily').textContent   = (monthlyLimit / 30).toFixed(2) + ' kg/day';
+            document.getElementById('warningExample').textContent = emissionLimit;
+            document.getElementById('warningAt').textContent      = (emissionLimit * warningPct / 100).toFixed(1);
+        }
+
+        function updateWarningLabel(val) {
+            document.getElementById('warningLabel').textContent = val + '%';
+        }
+
+        function setChartPreset(type, min, max) {
+            if (type === 'emission') {
+                document.getElementById('input_chartMin').value = min;
+                document.getElementById('input_chartMax').value = max;
+            } else {
+                document.getElementById('input_predMin').value = min;
+                document.getElementById('input_predMax').value = max;
+            }
+            livePreview();
+        }
+
+        // ==========================================
+        // USER DISPLAY
+        // ==========================================
+        function initUserDisplay() {
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (user.name) {
+                    document.getElementById('userName').textContent = user.name;
+                    document.getElementById('userRole').textContent = user.role || '';
+                    document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+                }
+            } catch(e) {}
+        }
+
+
+        // ==========================================
+        // USER MANAGEMENT (Admin only)
+        // ==========================================
+        const ROLE_CONFIG = {
+            user:     { label: 'User',     bg: 'bg-gray-100 text-gray-700',   dot: 'bg-gray-400' },
+            operator: { label: 'Operator', bg: 'bg-green-100 text-green-800', dot: 'bg-green-500' },
+            admin:    { label: 'Admin',    bg: 'bg-blue-100 text-blue-800',   dot: 'bg-blue-500' }
+        };
+
+        let currentUserId = null;
+        try { currentUserId = JSON.parse(localStorage.getItem('user') || '{}').user_id; } catch(e) {}
+
+        async function loadUsers() {
+            const token = localStorage.getItem('authToken');
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-gray-400 text-sm">Loading...</td></tr>';
+
+            try {
+                const res = await fetch(`${API_URL}/admin/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Not authorized');
+                const users = await res.json();
+
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-gray-400 text-sm">No users found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = users.map(u => {
+                    const rc = ROLE_CONFIG[u.role] || ROLE_CONFIG.user;
+                    const isMe = u.user_id === currentUserId;
+                    const joined = new Date(u.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+                    return `<tr class="border-b hover:bg-gray-50 ${!u.is_active ? 'opacity-50' : ''}">
+                        <td class="py-3 px-4">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xs font-bold flex-shrink-0">
+                                    ${u.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">${u.name}${isMe ? ' <span class="text-xs text-gray-400">(you)</span>' : ''}</p>
+                                    ${!u.is_active ? '<p class="text-xs text-red-500">Deactivated</p>' : ''}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4 text-sm text-gray-600">${u.email}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${rc.bg}">
+                                <span class="w-1.5 h-1.5 rounded-full ${rc.dot}"></span>
+                                ${rc.label}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-sm text-gray-500">${joined}</td>
+                        <td class="py-3 px-4">
+                            ${isMe
+                                ? '<span class="text-xs text-gray-400 italic">Cannot change own role</span>'
+                                : `<div class="flex items-center gap-2">
+                                    <select onchange="changeRole(${u.user_id}, this.value, this)"
+                                        class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white focus:ring-1 focus:ring-green-500 focus:border-transparent">
+                                        <option value="user"     ${u.role === 'user'     ? 'selected' : ''}>User</option>
+                                        <option value="operator" ${u.role === 'operator' ? 'selected' : ''}>Operator</option>
+                                        <option value="admin"    ${u.role === 'admin'    ? 'selected' : ''}>Admin</option>
+                                    </select>
+                                   </div>`
+                            }
+                        </td>
+                    </tr>`;
+                }).join('');
+
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-red-400 text-sm">Failed to load users: ${err.message}</td></tr>`;
+            }
+        }
+
+        async function changeRole(userId, newRole, selectEl) {
+            const token = localStorage.getItem('authToken');
+            const statusDiv = document.getElementById('userMgmtStatus');
+            const originalRole = selectEl.dataset.originalRole || selectEl.value;
+            selectEl.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/admin/users/${userId}/role`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ role: newRole })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    statusDiv.className = 'mb-3 p-3 rounded-lg text-sm font-medium bg-green-50 border border-green-200 text-green-800';
+                    statusDiv.textContent = `✅ Role updated successfully`;
+                    statusDiv.classList.remove('hidden');
+                    selectEl.dataset.originalRole = newRole;
+                    // Reload the table to refresh badges
+                    setTimeout(() => { loadUsers(); statusDiv.classList.add('hidden'); }, 1500);
+                } else {
+                    statusDiv.className = 'mb-3 p-3 rounded-lg text-sm font-medium bg-red-50 border border-red-200 text-red-800';
+                    statusDiv.textContent = `❌ ${data.error || 'Failed to update role'}`;
+                    statusDiv.classList.remove('hidden');
+                    selectEl.value = originalRole; // revert
+                }
+            } catch (err) {
+                statusDiv.className = 'mb-3 p-3 rounded-lg text-sm font-medium bg-red-50 border border-red-200 text-red-800';
+                statusDiv.textContent = '❌ Connection error — could not update role';
+                statusDiv.classList.remove('hidden');
+                selectEl.value = originalRole;
+            } finally {
+                selectEl.disabled = false;
+            }
+        }
+
+        // Auto-load users when page loads
+        loadUsers();
+
+        // Init
+        initUserDisplay();
+        loadSettings();
+    </script>
+</body>
+</html>
