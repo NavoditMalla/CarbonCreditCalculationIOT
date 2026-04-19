@@ -235,7 +235,7 @@ app.get('/api/emissions/all', async (req, res) => {
                 ed.sensor_id
             FROM Emission_Data ed
             ORDER BY ed.timestamp DESC
-            LIMIT 50`
+            LIMIT 10000`
         );
         console.log(`📊 Fetched ${emissions.length} emission records`);
         res.json(emissions);
@@ -367,7 +367,62 @@ app.get('/api/alerts', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch alerts' });
     }
 });
+// ==========================================
+// ADMIN MIDDLEWARE
+// ==========================================
+const requireAdmin = (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+};
 
+// ==========================================
+// ADMIN — USER MANAGEMENT ROUTES
+// ==========================================
+
+// GET all users (admin only)
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const [users] = await pool.query(
+            `SELECT user_id, name, email, role, is_active, created_at
+             FROM User
+             ORDER BY created_at DESC`
+        );
+        res.json(users);
+    } catch (error) {
+        console.error('Fetch users error:', error);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+// PATCH update a user's role (admin only)
+app.patch('/api/admin/users/:user_id/role', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { role } = req.body;
+        const { user_id } = req.params;
+
+        const allowedRoles = ['user', 'admin'];
+        if (!allowedRoles.includes(role)) {
+            return res.status(400).json({ error: 'Invalid role. Must be: user or admin' });
+        }
+
+        if (parseInt(user_id) === req.user.user_id) {
+            return res.status(400).json({ error: 'You cannot change your own role' });
+        }
+
+        await pool.query(
+            'UPDATE User SET role = ? WHERE user_id = ?',
+            [role, user_id]
+        );
+
+        console.log(`👤 Admin ${req.user.email} changed user ${user_id} role to ${role}`);
+        res.json({ message: `User role updated to ${role}` });
+    } catch (error) {
+        console.error('Update role error:', error);
+        res.status(500).json({ error: 'Failed to update role' });
+    }
+});
 // ==========================================
 // START SERVER
 // ==========================================
