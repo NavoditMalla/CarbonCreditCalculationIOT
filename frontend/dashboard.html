@@ -71,6 +71,21 @@
             </div>
         </div>
 
+
+        <!-- Daily Emission Alert Banner -->
+        <div id="dailyAlertBanner" class="mb-6 p-4 rounded-lg hidden">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <div class="flex-1">
+                    <p id="dailyAlertTitle" class="font-semibold"></p>
+                    <p id="dailyAlertMessage" class="text-sm"></p>
+                </div>
+                <button onclick="document.getElementById('dailyAlertBanner').classList.add('hidden')" class="text-sm px-3 py-1 rounded-lg border border-current opacity-60 hover:opacity-100 transition-opacity">Dismiss</button>
+            </div>
+        </div>
+
         <!-- Key Metrics -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             <div class="bg-white p-6 rounded-lg shadow-sm border">
@@ -432,7 +447,7 @@
         // LOAD SETTINGS FROM LOCALSTORAGE
         // ==========================================
         const SETTING_DEFAULTS = {
-            emissionLimit: 1000, monthlyLimit: 10000, warningThreshold: 80,
+            emissionLimit: 1000, monthlyLimit: 10000, dailyTotalLimit: 10, warningThreshold: 80,
             chartMin: '', chartMax: '', predMin: '', predMax: '',
             chartPoints: 20, tableRows: 10, refreshInterval: 5000, airflow: 500
         };
@@ -443,9 +458,10 @@
         }
 
         let S = getSettings(); // active settings
-        let EMISSION_LIMIT  = S.emissionLimit;
-        let MONTHLY_LIMIT   = S.monthlyLimit;
-        let DAILY_LIMIT     = MONTHLY_LIMIT / 30;
+        let EMISSION_LIMIT    = S.emissionLimit;
+        let MONTHLY_LIMIT     = S.monthlyLimit;
+        let DAILY_LIMIT       = MONTHLY_LIMIT / 30;
+        let DAILY_TOTAL_LIMIT = S.dailyTotalLimit;
         let WARNING_PCT     = S.warningThreshold / 100;
         let REFRESH_INTERVAL = S.refreshInterval;
         const PREDICTION_REFRESH_INTERVAL = 60000;
@@ -459,10 +475,11 @@
         // ==========================================
         function applySettingsToUI() {
             S = getSettings();
-            EMISSION_LIMIT = S.emissionLimit;
-            MONTHLY_LIMIT  = S.monthlyLimit;
-            DAILY_LIMIT    = MONTHLY_LIMIT / 30;
-            WARNING_PCT    = S.warningThreshold / 100;
+            EMISSION_LIMIT    = S.emissionLimit;
+            MONTHLY_LIMIT     = S.monthlyLimit;
+            DAILY_LIMIT       = MONTHLY_LIMIT / 30;
+            DAILY_TOTAL_LIMIT = S.dailyTotalLimit;
+            WARNING_PCT       = S.warningThreshold / 100;
 
             // Update displayed limits
             document.getElementById('limitDisplay').textContent      = EMISSION_LIMIT;
@@ -754,6 +771,50 @@
             return dailyCreditData;
         }
 
+
+        // ==========================================
+        // DAILY EMISSION ALERT
+        // ==========================================
+        function updateDailyAlert(creditData) {
+            const banner  = document.getElementById('dailyAlertBanner');
+            const title   = document.getElementById('dailyAlertTitle');
+            const message = document.getElementById('dailyAlertMessage');
+
+            if (!creditData || creditData.length === 0) return;
+
+            const todayStr   = new Date().toISOString().split('T')[0];
+            const today      = creditData.find(d => d.date === todayStr);
+            if (!today) return;
+
+            const totalToday = today.totalEmission;
+
+            // Use the user-defined Daily Total Limit from Settings
+            const alertLimit = DAILY_TOTAL_LIMIT;
+            const pct        = ((totalToday / alertLimit) * 100).toFixed(1);
+            const overBy     = (totalToday - alertLimit).toFixed(4);
+            const remaining  = (alertLimit - totalToday).toFixed(4);
+
+            if (totalToday > alertLimit) {
+                // ─── EXCEEDED ───────────────────────────────────────────────
+                banner.classList.remove('hidden');
+                banner.className  = 'mb-6 p-4 rounded-lg flex bg-red-50 border-2 border-red-300';
+                title.className   = 'font-semibold text-red-900';
+                message.className = 'text-sm text-red-700';
+                title.textContent   = '🚨 DAILY EMISSION LIMIT EXCEEDED!';
+                message.textContent = `Today's total: ${totalToday.toFixed(4)} kg CO₂ — ${overBy} kg over your daily alert limit of ${alertLimit} kg (${pct}% of limit). Carbon credit deficit is being accumulated. Change this limit in ⚙️ Settings.`;
+            } else if (totalToday >= alertLimit * (S.warningThreshold / 100)) {
+                // ─── APPROACHING ─────────────────────────────────────────────
+                banner.classList.remove('hidden');
+                banner.className  = 'mb-6 p-4 rounded-lg flex bg-yellow-50 border-2 border-yellow-300';
+                title.className   = 'font-semibold text-yellow-900';
+                message.className = 'text-sm text-yellow-700';
+                title.textContent   = '⚠️ WARNING: Approaching Daily Emission Limit';
+                message.textContent = `Today's total: ${totalToday.toFixed(4)} kg CO₂ is ${pct}% of your daily alert limit (${alertLimit} kg). Remaining allowance: ${remaining} kg. Change this limit in ⚙️ Settings.`;
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
         function updateCarbonCredits(creditData) {
             if (!creditData || creditData.length === 0) return;
             const totalEmissions = creditData.reduce((sum,day) => sum+day.totalEmission, 0);
@@ -801,12 +862,23 @@
         // ==========================================
         async function fetchEmissions() {
             try {
-                const response = await fetch(`${API_URL}/emissions/all`);
+                const token = localStorage.getItem('authToken');
+                const response = await fetch(`${API_URL}/emissions/all`, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('user');
+                    window.location.href = 'login.html';
+                    return;
+                }
                 if (!response.ok) throw new Error('Failed to fetch emissions');
                 const emissions = await response.json();
                 allEmissionsData = emissions;
                 updateDashboard(emissions);
-                updateCarbonCredits(calculateCarbonCredits(emissions));
+                const credits = calculateCarbonCredits(emissions);
+                updateCarbonCredits(credits);
+                updateDailyAlert(credits);
                 updateConnectionStatus(true);
             } catch (error) { updateConnectionStatus(false, error.message); }
         }
