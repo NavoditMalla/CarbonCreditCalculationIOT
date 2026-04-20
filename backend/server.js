@@ -214,24 +214,97 @@ app.patch('/api/sensor', authenticateToken, async (req, res) => {
 // ==========================================
 
 // POST — PUBLIC, called by serial-bridge.js (no auth token needed)
+// Also saves carbon credit and triggers alert if threshold exceeded
 app.post('/api/emissions', async (req, res) => {
     try {
         const { sensor_id, co2_value, co2_ppm, temperature, humidity } = req.body;
 
+        // Validate sensor exists
         const [sensors] = await pool.query(
-            'SELECT sensor_id FROM Sensor WHERE sensor_id = ? AND status = "active"',
+            'SELECT sensor_id, user_id FROM Sensor s JOIN User u ON s.user_id = u.user_id WHERE s.sensor_id = ? AND s.status = "active"',
             [sensor_id]
         );
         if (sensors.length === 0)
             return res.status(404).json({ error: `Sensor "${sensor_id}" not found. Check SENSOR_ID in Arduino code.` });
 
-        const emission_id = `EM_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        const user_id = sensors[0].user_id;
+        const ts      = Date.now();
+        const rand    = Math.floor(Math.random() * 1000);
+        const emission_id = `EM_${ts}_${rand}`;
+
+        // 1. Save emission record
         await pool.query(
             `INSERT INTO Emission_Data
              (emission_id, timestamp, co2_value, co2_ppm, temperature, humidity, sensor_id)
              VALUES (?, NOW(), ?, ?, ?, ?, ?)`,
             [emission_id, co2_value, co2_ppm || null, temperature, humidity, sensor_id]
         );
+
+        // 2. Calculate and save carbon credit (daily basis)
+        try {
+            const DAILY_LIMIT = 333.33; // kg/day (10000 kg/month ÷ 30)
+            const today = new Date().toISOString().split('T')[0];
+
+            // Sum today's emissions for this sensor
+            const [[dailyTotal]] = await pool.query(
+                `SELECT COALESCE(SUM(co2_value), 0) as total
+                 FROM Emission_Data
+                 WHERE sensor_id = ? AND DATE(timestamp) = ?`,
+                [sensor_id, today]
+            );
+
+            const todayTotal  = parseFloat(dailyTotal.total);
+            const difference  = DAILY_LIMIT - todayTotal;
+            const status      = difference > 0 ? 'earned' : difference < 0 ? 'deficit' : 'neutral';
+            const creditAmt   = Math.abs(difference);
+            const credit_id   = `CC_${today.replace(/-/g, '')}_${sensor_id}`;
+            const map_id      = `MAP_${credit_id}_${rand}`;
+
+            // Upsert carbon credit for today (replace if already exists for this sensor+date)
+            await pool.query(
+                `INSERT INTO Carbon_Credit
+                 (credit_id, calculated_date, emission_value, allowed_limit, credit_amount, status)
+                 VALUES (?, ?, ?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE
+                   emission_value = VALUES(emission_value),
+                   credit_amount  = VALUES(credit_amount),
+                   status         = VALUES(status)`,
+                [credit_id, today, todayTotal, DAILY_LIMIT, creditAmt, status]
+            );
+
+            // Link emission to credit (INSERT IGNORE avoids duplicate map entries)
+            await pool.query(
+                `INSERT IGNORE INTO Credit_Emission_Map (map_id, credit_id, emission_id)
+                 VALUES (?, ?, ?)`,
+                [map_id, credit_id, emission_id]
+            );
+
+            console.log(`💳 Credit | ${today} | ${status} | ${creditAmt.toFixed(4)} CC | total today: ${todayTotal.toFixed(4)} kg`);
+        } catch (creditErr) {
+            // Credit calc failure must not block the emission save
+            console.warn('⚠️ Credit calculation failed (emission still saved):', creditErr.message);
+        }
+
+        // 3. Create alert if current reading exceeds hourly threshold
+        try {
+            const HOURLY_LIMIT = 1000; // kg/hr
+            if (parseFloat(co2_value) > HOURLY_LIMIT) {
+                const alert_id = `ALERT_${ts}_${rand}`;
+                const severity = co2_value > HOURLY_LIMIT * 1.2 ? 'critical'
+                               : co2_value > HOURLY_LIMIT * 1.1 ? 'high'
+                               : 'medium';
+                await pool.query(
+                    `INSERT INTO Alert (alert_id, alert_type, threshold_value, alert_message, user_id, severity)
+                     VALUES (?, 'threshold_exceeded', ?, ?, ?, ?)`,
+                    [alert_id, HOURLY_LIMIT,
+                     `CO2 emission exceeded threshold: ${parseFloat(co2_value).toFixed(4)} kg/hr (Limit: ${HOURLY_LIMIT} kg/hr)`,
+                     user_id, severity]
+                );
+                console.log(`🚨 Alert created: ${severity} | ${co2_value} kg/hr`);
+            }
+        } catch (alertErr) {
+            console.warn('⚠️ Alert creation failed (emission still saved):', alertErr.message);
+        }
 
         res.status(201).json({ message: 'Emission recorded', emission_id });
     } catch (error) {
@@ -310,21 +383,24 @@ app.get('/api/predictions/stats', async (req, res) => {
 // CARBON CREDIT ROUTES
 // ==========================================
 
-app.get('/api/credits', authenticateToken, async (req, res) => {
+app.get('/api/credits', async (req, res) => {
     try {
+        // Public — returns all org credits ordered by date, deduplicated by credit_id
         const [rows] = await pool.query(
-            `SELECT cc.credit_id, cc.calculated_date, cc.emission_value,
-                    cc.allowed_limit, cc.credit_amount, cc.status
+            `SELECT DISTINCT
+                cc.credit_id,
+                cc.calculated_date,
+                cc.emission_value,
+                cc.allowed_limit,
+                cc.credit_amount,
+                cc.status
              FROM Carbon_Credit cc
-             JOIN Credit_Emission_Map cem ON cc.credit_id    = cem.credit_id
-             JOIN Emission_Data ed        ON cem.emission_id = ed.emission_id
-             JOIN Sensor s                ON ed.sensor_id    = s.sensor_id
-             WHERE s.user_id = ?
-             ORDER BY cc.calculated_date DESC LIMIT 100`,
-            [req.user.user_id]
+             ORDER BY cc.calculated_date DESC
+             LIMIT 100`
         );
         res.json(rows);
     } catch (error) {
+        console.error('Fetch credits error:', error);
         res.status(500).json({ error: 'Failed to fetch credits' });
     }
 });
