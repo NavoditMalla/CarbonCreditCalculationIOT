@@ -862,16 +862,8 @@
         // ==========================================
         async function fetchEmissions() {
             try {
-                const token = localStorage.getItem('authToken');
-                const response = await fetch(`${API_URL}/emissions/all`, {
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-                });
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('user');
-                    window.location.href = 'login.html';
-                    return;
-                }
+                // Public endpoint — all organisation data, no auth needed
+                const response = await fetch(`${API_URL}/emissions/all`);
                 if (!response.ok) throw new Error('Failed to fetch emissions');
                 const emissions = await response.json();
                 allEmissionsData = emissions;
@@ -985,7 +977,6 @@
         setInterval(fetchPredictions, PREDICTION_REFRESH_INTERVAL);
         setInterval(initUserDisplay, 300000);
 
-        // Also update the server.js API to return co2_ppm
     </script>
 </body>
 </html>
